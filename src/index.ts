@@ -1,11 +1,15 @@
-import { CommandFactory } from "nest-commander";
-import { CommandModule } from "./command.module";
+import { ConfigParser } from "./config-parser";
 
 export async function run() {
-  await CommandFactory.run(CommandModule, {
-    cliName: "zippee",
-    logger: ["warn", "error"],
-  });
-}
+  const configParser =  new ConfigParser()
+  const config =  await configParser.config()
 
-export { CommandModule };
+  config.setting.forEach((params) => {
+    if(params)
+    if(params.type === '.env' || params.type === '.envrc') {
+
+    }
+  })
+
+
+}

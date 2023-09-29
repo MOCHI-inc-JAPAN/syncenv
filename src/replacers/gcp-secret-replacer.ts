@@ -1,21 +1,18 @@
-
-import {SecretManagerServiceClient} from '@google-cloud/secret-manager'
-import {BaseReplacer} from './replacer-interface'
-import { SyncenvConfig } from './config-parser';
+import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
+import { BaseReplacer } from "./base-replacer";
+import { SyncenvConfig } from "../config-parser";
 
 export class GcpSecretReplacer extends BaseReplacer {
   private client = new SecretManagerServiceClient();
 
   async fetchValues(config: SyncenvConfig): Promise<Record<string, string>> {
-    const
+    const setting = config.setting;
     const [secret] = await this.client.getSecret({
       name: name,
     });
 
     const policy = secret.replication.replication;
 
-    throw new Error('Method not implemented.');
+    throw new Error("Method not implemented.");
   }
 }
-
-
