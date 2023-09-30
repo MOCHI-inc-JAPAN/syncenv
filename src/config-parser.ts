@@ -1,9 +1,17 @@
 import { cosmiconfig } from "cosmiconfig";
-import { record, object, union, string, literal, optional, parse } from "valibot";
+import {
+  record,
+  object,
+  union,
+  string,
+  literal,
+  optional,
+  parse,
+} from "valibot";
 
 export type ProviderType = "gcp";
-export type Placeholder = `$\{${string}\}`
-export type ReplacerTemplate = `__${ProviderType}:${string}__`
+export type Placeholder = `$\{${string}\}`;
+export type ReplacerTemplate = `__${ProviderType}:${string}__`;
 
 type EnvValue = {
   [key: string]: string | Placeholder;
@@ -13,10 +21,10 @@ type ReplacerValue = {
   [key: string]: string | ReplacerTemplate;
 };
 
-const ReplacerSchema = union([string(), record(string())])
+const ReplacerSchema = union([string(), record(string())]);
 const SyncenvConfigObjectSchema = union([
   object({
-    type: union([literal('.env'), literal('.envrc')]),
+    type: union([literal(".env"), literal(".envrc")]),
     output_dir: string(),
     file_name: optional(string()),
     env: string(),
@@ -26,20 +34,20 @@ const SyncenvConfigObjectSchema = union([
     type: literal("file"),
     output_path: string(),
     placeholder: string(),
-    replacer: optional(ReplacerSchema)
+    replacer: optional(ReplacerSchema),
   }),
   object({
     type: literal("template"),
     input_path: string(),
     output_path: string(),
-    replacer: optional(ReplacerSchema)
+    replacer: optional(ReplacerSchema),
   }),
 ]);
 
 const SyncenvConfigSchema = object({
   replacer: optional(ReplacerSchema),
-  setting: SyncenvConfigObjectSchema
-})
+  setting: SyncenvConfigObjectSchema,
+});
 
 export type SyncenvConfigObject =
   | {
@@ -62,12 +70,14 @@ export type SyncenvConfigObject =
       replacer?: ProviderType | ReplacerValue;
     };
 
-type SyncenvConfigInternal<Setting = SyncenvConfigObject | SyncenvConfigObject[]> = {
+type SyncenvConfigInternal<
+  Setting = SyncenvConfigObject | SyncenvConfigObject[]
+> = {
   replacer?: ProviderType | ReplacerValue;
-  setting: Setting
+  setting: Setting;
 };
 
-export type SyncenvConfig = SyncenvConfigInternal<SyncenvConfigObject[]>
+export type SyncenvConfig = SyncenvConfigInternal<SyncenvConfigObject[]>;
 
 export class ConfigParser {
   async config(): Promise<SyncenvConfig> {
@@ -78,19 +88,22 @@ export class ConfigParser {
       throw Error("configFilePath does not exist.");
     }
 
-    const validConfig = parse(SyncenvConfigSchema, configResult.config) as SyncenvConfigInternal;
+    const validConfig = parse(
+      SyncenvConfigSchema,
+      configResult.config
+    ) as SyncenvConfigInternal;
 
-    if(!Array.isArray(validConfig.setting)) {
-      validConfig.setting = [validConfig.setting]
+    if (!Array.isArray(validConfig.setting)) {
+      validConfig.setting = [validConfig.setting];
     }
 
-    validConfig.setting = (validConfig as SyncenvConfig).setting.map(v => {
+    validConfig.setting = (validConfig as SyncenvConfig).setting.map((v) => {
       if (!v.replacer && validConfig.replacer) {
-        v.replacer = validConfig.replacer
+        v.replacer = validConfig.replacer;
       }
-      return v
-    })
+      return v;
+    });
 
-    return validConfig as SyncenvConfig
+    return validConfig as SyncenvConfig;
   }
 }

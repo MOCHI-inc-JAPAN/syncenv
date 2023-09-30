@@ -1,13 +1,7 @@
 import { SyncenvConfig } from "../config-parser";
 
 export interface BaseProcessors {
-  new (
-    values: Record<
-      string,
-      string
-    >,
-    config: SyncenvConfig
-  ): BaseProcessors;
+  new (values: Record<string, string>, config: SyncenvConfig): BaseProcessors;
 }
 
 export abstract class BaseProcessors {
