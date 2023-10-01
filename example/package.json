@@ -10,6 +10,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "syncenv": "file:.."
+    "@tkow/syncenv": "file:.."
   }
 }

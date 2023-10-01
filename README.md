@@ -5,7 +5,7 @@ A simple env files management for projects.
 ### Install
 
 ```shell
-npm i -g syncenv
+npm i -g @tkow/syncenv
 ```
 
 ### Config
