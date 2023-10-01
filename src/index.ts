@@ -5,13 +5,10 @@ import DefaultReplacer from "./replacers/default-replacer";
 import processors from "./processors";
 
 export class Syncenv {
-  config!: Promise<SyncenvConfig>;
-
   constructor(
     private configParser: IConfigParser = new ConfigParser(),
     private configResolver: IConfigResolver = new ConfigResolver()
   ) {
-    this.config = this.configParser.config();
   }
 
   private replacerInputs(
@@ -57,8 +54,40 @@ export class Syncenv {
     return placeholderMap;
   }
 
-  async run() {
-    const config = await this.config;
+  private parseOptions (...options: string[]): {exit?: boolean, configPath?: string} {
+    const range = Array.from(new Array(options.length)).map((_,i) => i)
+    for(const index of range ) {
+      if(['-h','--help'].includes(options[index])) {
+        console.log('syncenv: command line tools management environment values in files.')
+        console.log('  --config, -c <path>: arbitrary config path is not configured by cosmiconfig.')
+        return {
+          exit: true
+        }
+      }
+      if(['-c','--config'].some((flag) => options[index].startsWith(flag))) {
+        const parsedConfigFlag = options[index].split('=')
+        if (parsedConfigFlag.length > 1){
+          return {
+            configPath: parsedConfigFlag.pop()
+          }
+        }
+
+        if (options[index + 1]){
+          return {
+            configPath: (options[index + 1])
+          }
+        }
+        throw Error('-c, --config option is spcified with invalid parameters')
+      }
+    }
+
+    return {}
+  }
+
+  async run(...options: string[]) {
+    const {configPath, exit} = this.parseOptions(...options)
+    if(exit) return
+    const config = await this.configParser.config(configPath);
     const replacers = await this.configResolver.resolveReplacers(config);
     const setting = config.setting;
     const queues: Promise<any>[] = [];

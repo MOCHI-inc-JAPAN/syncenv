@@ -9,6 +9,7 @@ import {
   parse,
   array,
 } from "valibot";
+import { resolve } from "node:path";
 
 export type ProviderType = "gcp";
 export type Placeholder = `$\{${string}\}` | `$${string}`;
@@ -98,14 +99,18 @@ export type SyncenvConfig<Replacer = string> = SyncenvConfigInternal<
 >;
 
 export interface IConfigParser {
-  config(): Promise<SyncenvConfig>
+  config(configPath?: string): Promise<SyncenvConfig>
 }
 
 export class ConfigParser {
   constructor() {}
-  async config(): Promise<SyncenvConfig> {
+  async config(configPath?: string): Promise<SyncenvConfig> {
     const explorer = cosmiconfig("syncenv");
-    const configResult = await explorer.search();
+    let parsedConfigPath = configPath;
+    if (parsedConfigPath && !parsedConfigPath.startsWith('/')) {
+      parsedConfigPath = resolve(process.cwd(), parsedConfigPath)
+    }
+    const configResult = parsedConfigPath ?  await explorer.load(parsedConfigPath) : await explorer.search();
 
     if (!configResult?.isEmpty) {
       throw Error("configFile does not exist.");
