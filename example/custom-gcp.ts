@@ -1,4 +1,4 @@
-import {BaseReplacer, SyncenvConfig} from 'syncenv'
+import {BaseReplacer, SyncenvConfig} from '@tkow/syncenv'
 
 class GcpSecretReplacerClientMock {
   private current: number = 0

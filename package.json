@@ -1,5 +1,5 @@
 {
-  "name": "syncenv",
+  "name": "@tkow/syncenv",
   "version": "1.0.0",
   "description": "syncenv is something to keep env configuration consistent.",
   "main": "dist/index.js",
