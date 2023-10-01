@@ -29,20 +29,23 @@ const SyncenvConfigObjectSchema = union([
     type: union([literal(".env"), literal(".envrc")]),
     output_dir: string(),
     filename: optional(string()),
-    env: string(),
+    env: record(string()),
     replaces: optional(ReplacesSchema),
+    defaultReducer: optional(string())
   }),
   object({
     type: literal("file"),
     output_path: string(),
     placeholder: string(),
     replaces: optional(ReplacesSchema),
+    defaultReducer: optional(string())
   }),
   object({
     type: literal("template"),
     input_path: string(),
     output_path: string(),
     replaces: optional(ReplacesSchema),
+    defaultReducer: optional(string())
   }),
 ]);
 
@@ -50,7 +53,7 @@ const SyncenvConfigSchema = object({
   replaces: optional(ReplacesSchema),
   defaultReplacer: optional(string()),
   plugins: optional(array(string())),
-  setting: SyncenvConfigObjectSchema,
+  setting: union([SyncenvConfigObjectSchema, array(SyncenvConfigObjectSchema)]),
 });
 
 export type EnvType = ".env" | ".envrc"
@@ -112,7 +115,7 @@ export class ConfigParser {
     }
     const configResult = parsedConfigPath ?  await explorer.load(parsedConfigPath) : await explorer.search();
 
-    if (!configResult?.isEmpty) {
+    if (!configResult || configResult.isEmpty) {
       throw Error("configFile does not exist.");
     }
 

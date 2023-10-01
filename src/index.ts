@@ -1,6 +1,11 @@
-import { ConfigParser, IConfigParser, SyncenvConfig } from "./config-parser";
-import { ConfigResolver, IConfigResolver } from "./config-resolver";
+import {
+  ConfigParser,
+  type IConfigParser,
+  type SyncenvConfig,
+} from "./config-parser";
+import { ConfigResolver, type IConfigResolver } from "./config-resolver";
 import { BaseReplacer } from "./replacers/base-replacer";
+import { BaseProcessor } from "./processors/base-processor";
 import DefaultReplacer from "./replacers/default-replacer";
 import processors from "./processors";
 
@@ -8,8 +13,7 @@ export class Syncenv {
   constructor(
     private configParser: IConfigParser = new ConfigParser(),
     private configResolver: IConfigResolver = new ConfigResolver()
-  ) {
-  }
+  ) {}
 
   private replacerInputs(
     replaces: Record<string, string> | undefined,
@@ -44,8 +48,8 @@ export class Syncenv {
     for (const [replacerKey, replaceStringMap] of Object.entries(
       replacerInputs
     )) {
-      const replacer = replacers[replacerKey]
-      const addition = await replacer.fetchValues(replaceStringMap)
+      const replacer = replacers[replacerKey];
+      const addition = await replacer.fetchValues(replaceStringMap);
       placeholderMap = {
         ...placeholderMap,
         ...addition,
@@ -54,39 +58,46 @@ export class Syncenv {
     return placeholderMap;
   }
 
-  private parseOptions (...options: string[]): {exit?: boolean, configPath?: string} {
-    const range = Array.from(new Array(options.length)).map((_,i) => i)
-    for(const index of range ) {
-      if(['-h','--help'].includes(options[index])) {
-        console.log('syncenv: command line tools management environment values in files.')
-        console.log('  --config, -c <path>: arbitrary config path is not configured by cosmiconfig.')
+  private parseOptions(...options: string[]): {
+    exit?: boolean;
+    configPath?: string;
+  } {
+    const range = Array.from(new Array(options.length)).map((_, i) => i);
+    for (const index of range) {
+      if (["-h", "--help"].includes(options[index])) {
+        console.log(
+          "syncenv: command line tools management environment values in files."
+        );
+        console.log(
+          "  --config, -c <path>: arbitrary config path is not configured by cosmiconfig."
+        );
         return {
-          exit: true
-        }
+          exit: true,
+        };
       }
-      if(['-c','--config'].some((flag) => options[index].startsWith(flag))) {
-        const parsedConfigFlag = options[index].split('=')
-        if (parsedConfigFlag.length > 1){
+      if (["-c", "--config"].some((flag) => options[index].startsWith(flag))) {
+        const parsedConfigFlag = options[index].split("=");
+        if (parsedConfigFlag.length > 1) {
           return {
-            configPath: parsedConfigFlag.pop()
-          }
+            configPath: parsedConfigFlag.pop(),
+          };
         }
 
-        if (options[index + 1]){
+        if (options[index + 1]) {
           return {
-            configPath: (options[index + 1])
-          }
+            configPath: options[index + 1],
+          };
         }
-        throw Error('-c, --config option is spcified with invalid parameters')
+        throw Error("-c, --config option is spcified with invalid parameters");
       }
     }
 
-    return {}
+    return {};
   }
 
   async run(...options: string[]) {
-    const {configPath, exit} = this.parseOptions(...options)
-    if(exit) return
+    const { configPath, exit } = this.parseOptions(...options);
+    if (exit) return;
     const config = await this.configParser.config(configPath);
     const replacers = await this.configResolver.resolveReplacers(config);
     const setting = config.setting;
@@ -100,10 +111,18 @@ export class Syncenv {
         replacers,
         replacerInputs
       );
-      const processorClass = processors[params.type]
+      const processorClass = processors[params.type];
       const processor = new processorClass(placeholderMapping, params);
       queues.push(processor.process());
     }
     await Promise.all(queues);
   }
 }
+
+export {
+  BaseReplacer,
+  SyncenvConfig,
+  IConfigResolver,
+  IConfigParser,
+  BaseProcessor,
+};

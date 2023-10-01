@@ -5,6 +5,7 @@ import {
 } from "./replacers/base-replacer";
 import GcpSecretReplacer from "./replacers/gcp-secret-replacer";
 import DefaultReplacer from "./replacers/default-replacer";
+import {resolve} from "node:path";
 
 const BUILTIN_REPLACERS = [
   GcpSecretReplacer.pluginId,
@@ -30,7 +31,8 @@ export class ConfigResolver {
     if (BUILTIN_REPLACERS.includes(str as BuitinReplacers)) {
       return await this.builtinReplacers(str as BuitinReplacers)();
     }
-    return await import(str);
+    const importPath = str.startsWith('.') ? resolve(process.cwd(), str) : str
+    return await import(importPath);
   }
 
   async resolveReplacers(
@@ -43,7 +45,7 @@ export class ConfigResolver {
       ),
     ];
     for (const plugin of plugins) {
-      const Replacer: BaseReplacerConstructor = await this.loadReplacer(plugin);
+      const Replacer: BaseReplacerConstructor = (await this.loadReplacer(plugin)).default;
       replacers[Replacer.pluginId] = new Replacer();
     }
     return replacers;
