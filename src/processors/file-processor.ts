@@ -1,11 +1,22 @@
-import { SyncenvConfig } from "../config-parser";
-import { BaseProcessors } from "./base-processor";
+import { resolve } from "node:path";
+import { writeFile } from "node:fs/promises";
+import { FileType, SyncenvConfigObject } from "../config-parser";
+import { BaseProcessor } from "./base-processor";
 
-export class FileProcessors extends BaseProcessors {
-  constructor(private values: Record<string, string>, config: SyncenvConfig) {
+export class FileProcessor extends BaseProcessor {
+  constructor(
+    private placeholderMap: Record<string, string>,
+    private config: Extract<SyncenvConfigObject<string>, { type: FileType }>
+  ) {
     super();
   }
-  process(): Promise<void> {
-    throw new Error("Method not implemented.");
+  async process(): Promise<void> {
+    const outPath = this.config.output_path.startsWith("/")
+      ? this.config.output_path
+      : resolve(global.process.cwd(), this.config.output_path);
+    const contents = this.replaceValue(this.config.placeholder, this.placeholderMap);
+    return writeFile(outPath, contents).then(()=> {
+      console.log(`${outPath} created.`)
+    });
   }
 }

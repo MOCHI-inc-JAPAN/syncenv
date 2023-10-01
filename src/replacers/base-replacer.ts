@@ -1,5 +1,16 @@
 import { SyncenvConfig } from "../config-parser";
 
+
+export interface BaseReplacerConstructor {
+  pluginId: string
+  new (): BaseReplacer
+}
+
 export abstract class BaseReplacer {
-  abstract fetchValues(config: SyncenvConfig): Promise<Record<string, string>>;
+  constructor() {}
+  static pluginId: string
+  abstract fetchValues(replaces: Record<string, string>, config?: SyncenvConfig): Promise<Record<string, string>>;
+  get pluginId() {
+    return (this.constructor as typeof BaseReplacer).pluginId
+  }
 }

@@ -7,11 +7,12 @@ import {
   literal,
   optional,
   parse,
+  array,
 } from "valibot";
 
 export type ProviderType = "gcp";
 export type Placeholder = `$\{${string}\}`;
-export type ReplacerTemplate = `__${ProviderType}:${string}__`;
+export type ReplacerTemplate = `@${ProviderType}:${string}`;
 
 type EnvValue = {
   [key: string]: string | Placeholder;
@@ -21,65 +22,83 @@ type ReplacerValue = {
   [key: string]: string | ReplacerTemplate;
 };
 
-const ReplacerSchema = union([string(), record(string())]);
+const ReplacesSchema = record(string());
 const SyncenvConfigObjectSchema = union([
   object({
     type: union([literal(".env"), literal(".envrc")]),
     output_dir: string(),
     file_name: optional(string()),
     env: string(),
-    replacer: optional(ReplacerSchema),
+    replaces: optional(ReplacesSchema),
   }),
   object({
     type: literal("file"),
     output_path: string(),
     placeholder: string(),
-    replacer: optional(ReplacerSchema),
+    replaces: optional(ReplacesSchema),
   }),
   object({
     type: literal("template"),
     input_path: string(),
     output_path: string(),
-    replacer: optional(ReplacerSchema),
+    replaces: optional(ReplacesSchema),
   }),
 ]);
 
 const SyncenvConfigSchema = object({
-  replacer: optional(ReplacerSchema),
+  replaces: optional(ReplacesSchema),
+  defaultReplacer: optional(string()),
+  plugins: optional(array(string())),
   setting: SyncenvConfigObjectSchema,
 });
 
-export type SyncenvConfigObject =
+export type EnvType = ".env" | ".envrc"
+export type FileType = "file"
+export type TemplateType = "template"
+
+export type ConfigObjectType = EnvType | FileType | TemplateType
+
+export type SyncenvConfigObject<Replacer> =
   | {
-      type: ".env" | ".envrc";
+      type: EnvType;
       output_dir: string;
       file_name?: string;
       env: EnvValue;
-      replacer?: ProviderType | ReplacerValue;
+      replaces?: ReplacerValue;
+      defaultReplacer?: Replacer;
     }
   | {
-      type: "file";
+      type: FileType;
       output_path: string;
       placeholder: string;
-      replacer?: ProviderType | ReplacerValue;
+      replaces?: ReplacerValue;
+      defaultReplacer?: Replacer;
     }
   | {
-      type: "template";
+      type: TemplateType;
       input_path: string;
       output_path: string;
-      replacer?: ProviderType | ReplacerValue;
+      replaces?: ReplacerValue;
+      defaultReplacer?: Replacer;
     };
 
 type SyncenvConfigInternal<
-  Setting = SyncenvConfigObject | SyncenvConfigObject[]
+  Setting = SyncenvConfigObject<string> | SyncenvConfigObject<string>[],
+  DefaultReplacer = string
 > = {
-  replacer?: ProviderType | ReplacerValue;
+  replaces?: ReplacerValue;
+  defaultReplacer?: DefaultReplacer;
+  plugins?: string[]
   setting: Setting;
 };
 
-export type SyncenvConfig = SyncenvConfigInternal<SyncenvConfigObject[]>;
+export type SyncenvConfig<Replacer = string> = SyncenvConfigInternal<
+  SyncenvConfigObject<Replacer>[],
+  Replacer
+>;
 
 export class ConfigParser {
+  constructor() {}
   async config(): Promise<SyncenvConfig> {
     const explorer = cosmiconfig("syncenv");
     const configResult = await explorer.search();
@@ -97,9 +116,15 @@ export class ConfigParser {
       validConfig.setting = [validConfig.setting];
     }
 
-    validConfig.setting = (validConfig as SyncenvConfig).setting.map((v) => {
-      if (!v.replacer && validConfig.replacer) {
-        v.replacer = validConfig.replacer;
+    validConfig.setting = validConfig.setting.map((v) => {
+      if (!v.defaultReplacer && validConfig.defaultReplacer) {
+        v.defaultReplacer = validConfig.defaultReplacer;
+      }
+      if (validConfig.replaces) {
+        v.replaces = {
+          ...validConfig.replaces,
+          ...v.replaces
+        };
       }
       return v;
     });
