@@ -1,18 +1,39 @@
-import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
+import {
+  SecretManagerServiceClient,
+  type SecretManagerServiceClient as ISecretManagerServiceClient,
+} from "@google-cloud/secret-manager";
 import { BaseReplacer } from "./base-replacer";
 import { SyncenvConfig } from "../config-parser";
 
-export class GcpSecretReplacer extends BaseReplacer {
-  private client = new SecretManagerServiceClient();
+export type IGcpSecretReplacerClient = Pick<
+  ISecretManagerServiceClient,
+  "accessSecretVersion"
+>;
 
-  async fetchValues(config: SyncenvConfig): Promise<Record<string, string>> {
-    const setting = config.setting;
-    const [secret] = await this.client.getSecret({
-      name: name,
-    });
+export default class GcpSecretReplacer extends BaseReplacer {
+  static pluginId: "gcp" = "gcp";
 
-    const policy = secret.replication.replication;
+  constructor(
+    private client: IGcpSecretReplacerClient = new SecretManagerServiceClient()
+  ) {
+    super();
+  }
 
-    throw new Error("Method not implemented.");
+  async fetchValues(
+    replaces: Record<string, string>,
+    config: SyncenvConfig
+  ): Promise<Record<string, string>> {
+    const results: Record<string, string> = {};
+    for (let [key, requestId] of Object.entries(replaces)) {
+      const [data] = await this.client.accessSecretVersion({
+        name: requestId,
+      });
+      const replacedValue = data.payload?.data?.toString();
+      if (!replacedValue) {
+        console.warn(`Cannot access gcp secret ${requestId}`);
+      }
+      results[key] = replacedValue || "";
+    }
+    return results;
   }
 }

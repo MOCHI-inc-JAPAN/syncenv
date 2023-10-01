@@ -1,0 +1,34 @@
+plugins: ['./custom-gcp']
+setting:
+  - type: '.envrc'
+    output_dir: ./artifacts
+    env:
+      NOT_REPLACED: NOT_REPLACED
+      REPLACED: ${TO_BE_REPLACE}
+    replaces:
+      TO_BE_REPLACE: replaceId
+  - type: '.env'
+    output_dir: ./artifacts
+    filename: .env.dev
+    env:
+      NOT_REPLACED: NOT_REPLACED
+      REPLACED: ${TO_BE_REPLACE}
+      REPLACED_PROVIDER: $TO_BE_REPLACE_PROVIDER
+    replaces:
+      TO_BE_REPLACE: replaceId
+      TO_BE_REPLACE_PROVIDER: __gcp:replaceId__
+    defaultReplacer: default
+  - type: file
+    output_path: ./artifacts/file-output.txt
+    placeholder: $TO_BE_REPLACE $TO_BE_REPLACE_PROVIDER
+    replaces:
+      TO_BE_REPLACE: replaceId
+      TO_BE_REPLACE_PROVIDER: __gcp:replaceId__
+    defaultReplacer?: default
+  - type: template
+    input_path: ./.env.template
+    output_path: ./artifacts/template-output.env
+    replaces:
+      TO_BE_REPLACE: replaceId
+      TO_BE_REPLACE_PROVIDER: __gcp:replaceId__
+    defaultReplacer?: default

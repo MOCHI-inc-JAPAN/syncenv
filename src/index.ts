@@ -1,15 +1,128 @@
-import { ConfigParser } from "./config-parser";
+import {
+  ConfigParser,
+  type IConfigParser,
+  type SyncenvConfig,
+} from "./config-parser";
+import { ConfigResolver, type IConfigResolver } from "./config-resolver";
+import { BaseReplacer } from "./replacers/base-replacer";
+import { BaseProcessor } from "./processors/base-processor";
+import DefaultReplacer from "./replacers/default-replacer";
+import processors from "./processors";
 
-export async function run() {
-  const configParser =  new ConfigParser()
-  const config =  await configParser.config()
+export class Syncenv {
+  constructor(
+    private configParser: IConfigParser = new ConfigParser(),
+    private configResolver: IConfigResolver = new ConfigResolver()
+  ) {}
 
-  config.setting.forEach((params) => {
-    if(params)
-    if(params.type === '.env' || params.type === '.envrc') {
-
+  private replacerInputs(
+    replaces: Record<string, string> | undefined,
+    defaultReplacerKey: string = DefaultReplacer.pluginId
+  ): Record<string, Record<string, string>> {
+    const replacersMap: Record<string, Record<string, string>> = {};
+    if (!replaces) {
+      return replacersMap;
     }
-  })
+    Object.entries(replaces).forEach(([key, value]) => {
+      const parsedMacher = value.match(/^__(.*):(.*)__$/);
+      if (parsedMacher?.[1] && parsedMacher?.[2]) {
+        const [_, replacerKey, requestId] = parsedMacher;
+        const replacersMapValue = replacersMap[replacerKey] || {};
+        replacersMapValue[key] = requestId;
+        replacersMap[replacerKey] = replacersMapValue;
+      } else {
+        const replacerKey = defaultReplacerKey;
+        const replacersMapValue = replacersMap[replacerKey] || {};
+        replacersMapValue[key] = value;
+        replacersMap[replacerKey] = replacersMapValue;
+      }
+    });
+    return replacersMap;
+  }
 
+  private async createPlaceholderMap(
+    replacers: Record<string, BaseReplacer>,
+    replacerInputs: Record<string, Record<string, string>>
+  ): Promise<Record<string, string>> {
+    let placeholderMap: Record<string, string> = {};
+    for (const [replacerKey, replaceStringMap] of Object.entries(
+      replacerInputs
+    )) {
+      const replacer = replacers[replacerKey];
+      const addition = await replacer.fetchValues(replaceStringMap);
+      placeholderMap = {
+        ...placeholderMap,
+        ...addition,
+      };
+    }
+    return placeholderMap;
+  }
 
+  private parseOptions(...options: string[]): {
+    exit?: boolean;
+    configPath?: string;
+  } {
+    const range = Array.from(new Array(options.length)).map((_, i) => i);
+    for (const index of range) {
+      if (["-h", "--help"].includes(options[index])) {
+        console.log(
+          "syncenv: command line tools management environment values in files."
+        );
+        console.log(
+          "  --config, -c <path>: arbitrary config path is not configured by cosmiconfig."
+        );
+        return {
+          exit: true,
+        };
+      }
+      if (["-c", "--config"].some((flag) => options[index].startsWith(flag))) {
+        const parsedConfigFlag = options[index].split("=");
+        if (parsedConfigFlag.length > 1) {
+          return {
+            configPath: parsedConfigFlag.pop(),
+          };
+        }
+
+        if (options[index + 1]) {
+          return {
+            configPath: options[index + 1],
+          };
+        }
+        throw Error("-c, --config option is spcified with invalid parameters");
+      }
+    }
+
+    return {};
+  }
+
+  async run(...options: string[]) {
+    const { configPath, exit } = this.parseOptions(...options);
+    if (exit) return;
+    const config = await this.configParser.config(configPath);
+    const replacers = await this.configResolver.resolveReplacers(config);
+    const setting = config.setting;
+    const queues: Promise<any>[] = [];
+    for (const params of setting) {
+      const replacerInputs = this.replacerInputs(
+        params.replaces,
+        params.defaultReplacer
+      );
+      const placeholderMapping = await this.createPlaceholderMap(
+        replacers,
+        replacerInputs
+      );
+      const processorClass = processors[params.type];
+      const processor = new processorClass(placeholderMapping, params);
+      queues.push(processor.process());
+    }
+    await Promise.all(queues);
+  }
 }
+
+export {
+  BaseReplacer,
+  SyncenvConfig,
+  IConfigResolver,
+  IConfigParser,
+  BaseProcessor,
+};
