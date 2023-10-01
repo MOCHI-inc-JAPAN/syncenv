@@ -31,21 +31,21 @@ const SyncenvConfigObjectSchema = union([
     filename: optional(string()),
     env: record(string()),
     replaces: optional(ReplacesSchema),
-    defaultReducer: optional(string())
+    defaultReducer: optional(string()),
   }),
   object({
     type: literal("file"),
     output_path: string(),
     placeholder: string(),
     replaces: optional(ReplacesSchema),
-    defaultReducer: optional(string())
+    defaultReducer: optional(string()),
   }),
   object({
     type: literal("template"),
     input_path: string(),
     output_path: string(),
     replaces: optional(ReplacesSchema),
-    defaultReducer: optional(string())
+    defaultReducer: optional(string()),
   }),
 ]);
 
@@ -56,11 +56,11 @@ const SyncenvConfigSchema = object({
   setting: union([SyncenvConfigObjectSchema, array(SyncenvConfigObjectSchema)]),
 });
 
-export type EnvType = ".env" | ".envrc"
-export type FileType = "file"
-export type TemplateType = "template"
+export type EnvType = ".env" | ".envrc";
+export type FileType = "file";
+export type TemplateType = "template";
 
-export type ConfigObjectType = EnvType | FileType | TemplateType
+export type ConfigObjectType = EnvType | FileType | TemplateType;
 
 export type SyncenvConfigObject<Replacer> =
   | {
@@ -92,7 +92,7 @@ type SyncenvConfigInternal<
 > = {
   replaces?: ReplacerValue;
   defaultReplacer?: DefaultReplacer;
-  plugins?: string[]
+  plugins?: string[];
   setting: Setting;
 };
 
@@ -102,7 +102,7 @@ export type SyncenvConfig<Replacer = string> = SyncenvConfigInternal<
 >;
 
 export interface IConfigParser {
-  config(configPath?: string): Promise<SyncenvConfig>
+  config(configPath?: string): Promise<SyncenvConfig>;
 }
 
 export class ConfigParser {
@@ -110,10 +110,12 @@ export class ConfigParser {
   async config(configPath?: string): Promise<SyncenvConfig> {
     const explorer = cosmiconfig("syncenv");
     let parsedConfigPath = configPath;
-    if (parsedConfigPath && !parsedConfigPath.startsWith('/')) {
-      parsedConfigPath = resolve(process.cwd(), parsedConfigPath)
+    if (parsedConfigPath && !parsedConfigPath.startsWith("/")) {
+      parsedConfigPath = resolve(process.cwd(), parsedConfigPath);
     }
-    const configResult = parsedConfigPath ?  await explorer.load(parsedConfigPath) : await explorer.search();
+    const configResult = parsedConfigPath
+      ? await explorer.load(parsedConfigPath)
+      : await explorer.search();
 
     if (!configResult || configResult.isEmpty) {
       throw Error("configFile does not exist.");
@@ -135,7 +137,7 @@ export class ConfigParser {
       if (validConfig.replaces) {
         v.replaces = {
           ...validConfig.replaces,
-          ...v.replaces
+          ...v.replaces,
         };
       }
       return v;

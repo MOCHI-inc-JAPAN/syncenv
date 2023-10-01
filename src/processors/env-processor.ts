@@ -17,7 +17,7 @@ export class EnvProcessor extends BaseProcessor {
       : resolve(global.process.cwd(), this.config.output_dir);
     const outPath = join(outDir, this.config.filename || this.config.type);
     const contents = Object.entries(this.config.env).map(([key, value]) => {
-      const finalValue = this.replaceValue(value, this.placeholderMap)
+      const finalValue = this.replaceValue(value, this.placeholderMap);
       const text = [key, finalValue].join("=");
       if (this.config.type === ".envrc") {
         return `export ${text}`;
@@ -25,8 +25,8 @@ export class EnvProcessor extends BaseProcessor {
         return text;
       }
     });
-    return writeFile(outPath, contents.join(EOL)).then(()=> {
-      console.log(`${outPath} created.`)
+    return writeFile(outPath, contents.join(EOL)).then(() => {
+      console.log(`${outPath} created.`);
     });
   }
 }

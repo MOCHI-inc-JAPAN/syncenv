@@ -14,9 +14,12 @@ export class FileProcessor extends BaseProcessor {
     const outPath = this.config.output_path.startsWith("/")
       ? this.config.output_path
       : resolve(global.process.cwd(), this.config.output_path);
-    const contents = this.replaceValue(this.config.placeholder, this.placeholderMap);
-    return writeFile(outPath, contents).then(()=> {
-      console.log(`${outPath} created.`)
+    const contents = this.replaceValue(
+      this.config.placeholder,
+      this.placeholderMap
+    );
+    return writeFile(outPath, contents).then(() => {
+      console.log(`${outPath} created.`);
     });
   }
 }

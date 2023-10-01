@@ -3,5 +3,5 @@ import { dirname } from "node:path";
 
 export async function writeFile(outPath: string, contents: string) {
   await mkdir(dirname(outPath), { recursive: true });
-  return fsWriteFile(outPath, contents)
+  return fsWriteFile(outPath, contents);
 }

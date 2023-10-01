@@ -19,11 +19,11 @@ export class TemplateProcessor extends BaseProcessor {
     const outPath = this.config.input_path.startsWith("/")
       ? this.config.output_path
       : resolve(global.process.cwd(), this.config.output_path);
-    const file =  await readFile(inputPath)
-    console.log(`${inputPath} read.`)
+    const file = await readFile(inputPath);
+    console.log(`${inputPath} read.`);
     const contents = this.replaceValue(file.toString(), this.placeholderMap);
-    return writeFile(outPath, contents).then(()=> {
-      console.log(`${outPath} created.`)
+    return writeFile(outPath, contents).then(() => {
+      console.log(`${outPath} created.`);
     });
   }
 }
