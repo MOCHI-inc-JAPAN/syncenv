@@ -1,5 +1,5 @@
 import { resolve } from "node:path";
-import { writeFile } from "node:fs/promises";
+import { writeFile } from "../writeFile";
 import { FileType, SyncenvConfigObject } from "../config-parser";
 import { BaseProcessor } from "./base-processor";
 

@@ -11,8 +11,8 @@ import {
 } from "valibot";
 
 export type ProviderType = "gcp";
-export type Placeholder = `$\{${string}\}`;
-export type ReplacerTemplate = `@${ProviderType}:${string}`;
+export type Placeholder = `$\{${string}\}` | `$${string}`;
+export type ReplacerTemplate = `__${ProviderType}:${string}__`;
 
 type EnvValue = {
   [key: string]: string | Placeholder;
@@ -27,7 +27,7 @@ const SyncenvConfigObjectSchema = union([
   object({
     type: union([literal(".env"), literal(".envrc")]),
     output_dir: string(),
-    file_name: optional(string()),
+    filename: optional(string()),
     env: string(),
     replaces: optional(ReplacesSchema),
   }),
@@ -62,7 +62,7 @@ export type SyncenvConfigObject<Replacer> =
   | {
       type: EnvType;
       output_dir: string;
-      file_name?: string;
+      filename?: string;
       env: EnvValue;
       replaces?: ReplacerValue;
       defaultReplacer?: Replacer;
@@ -97,6 +97,10 @@ export type SyncenvConfig<Replacer = string> = SyncenvConfigInternal<
   Replacer
 >;
 
+export interface IConfigParser {
+  config(): Promise<SyncenvConfig>
+}
+
 export class ConfigParser {
   constructor() {}
   async config(): Promise<SyncenvConfig> {
@@ -104,7 +108,7 @@ export class ConfigParser {
     const configResult = await explorer.search();
 
     if (!configResult?.isEmpty) {
-      throw Error("configFilePath does not exist.");
+      throw Error("configFile does not exist.");
     }
 
     const validConfig = parse(

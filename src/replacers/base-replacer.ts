@@ -3,11 +3,10 @@ import { SyncenvConfig } from "../config-parser";
 
 export interface BaseReplacerConstructor {
   pluginId: string
-  new (): BaseReplacer
+  new (...args: any[]): BaseReplacer
 }
 
 export abstract class BaseReplacer {
-  constructor() {}
   static pluginId: string
   abstract fetchValues(replaces: Record<string, string>, config?: SyncenvConfig): Promise<Record<string, string>>;
   get pluginId() {

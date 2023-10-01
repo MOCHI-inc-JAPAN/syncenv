@@ -10,7 +10,8 @@ export abstract class BaseProcessor {
   protected replaceValue(target:string, placeholderMap: Record<string, string>): string {
     let newContent = target
     Object.entries(placeholderMap).forEach(([key, value])=> {
-      newContent = newContent.replace(new RegExp(`\\$\{${key}\}|\\$${key}`, 'g'), value)
+      newContent = newContent.replace(new RegExp(`\\$\{${key}\}|\\$${key}(?![^\\s])`, 'g'), value)
+
     })
     return newContent
   }
