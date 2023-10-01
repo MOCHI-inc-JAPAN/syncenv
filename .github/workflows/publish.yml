@@ -30,7 +30,6 @@ jobs:
       - name: Setup npm config
         run: |
           npm config set '//registry.npmjs.org/:_authToken' '${NPM_TOKEN}'
-          npm config set publish-branch ${GITHUB_REF#refs/heads/}
         shell: bash
 
       - name: create and publish versions
