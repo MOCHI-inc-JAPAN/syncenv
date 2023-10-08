@@ -1,5 +1,11 @@
 # syncenv
 
+## 1.0.2
+
+### Patch Changes
+
+- eea785a: cache same values with gcp provider
+
 ## 1.0.1
 
 ### Patch Changes
