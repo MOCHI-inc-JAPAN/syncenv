@@ -12,6 +12,7 @@ export type IGcpSecretReplacerClient = Pick<
 
 export default class GcpSecretReplacer extends BaseReplacer {
   static pluginId: "gcp" = "gcp";
+  private results: Record<string, string> = {};
 
   constructor(
     private client: IGcpSecretReplacerClient = new SecretManagerServiceClient()
@@ -23,17 +24,22 @@ export default class GcpSecretReplacer extends BaseReplacer {
     replaces: Record<string, string>,
     config: SyncenvConfig
   ): Promise<Record<string, string>> {
-    const results: Record<string, string> = {};
     for (let [key, requestId] of Object.entries(replaces)) {
-      const [data] = await this.client.accessSecretVersion({
-        name: requestId,
-      });
-      const replacedValue = data.payload?.data?.toString();
-      if (!replacedValue) {
-        console.warn(`Cannot access gcp secret ${requestId}`);
+      if (!this.results[key]) {
+        try {
+          const [data] = await this.client.accessSecretVersion({
+            name: requestId,
+          });
+          const replacedValue = data.payload?.data?.toString();
+          if (!replacedValue) {
+            console.warn(`Cannot access gcp secret ${requestId}`);
+          }
+          this.results[key] = replacedValue || "";
+        } catch (e) {
+          console.warn(e);
+        }
       }
-      results[key] = replacedValue || "";
     }
-    return results;
+    return this.results;
   }
 }
