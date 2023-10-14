@@ -1,5 +1,11 @@
 # syncenv
 
+## 1.0.4
+
+### Patch Changes
+
+- ca0150d: escape sequence processing
+
 ## 1.0.3
 
 ### Patch Changes
