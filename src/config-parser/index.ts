@@ -8,28 +8,47 @@ import {
   optional,
   parse,
   array,
+  boolean,
+  number,
 } from "valibot";
 import { resolve } from "node:path";
+import { parseMatch } from "../parseSetting";
 
 export type ProviderType = "gcp";
 export type Placeholder = `$\{${string}\}` | `$${string}`;
 export type ReplacerTemplate = `__${ProviderType}:${string}__`;
 
 type EnvValue = {
-  [key: string]: string | Placeholder;
+  [key: string]: boolean | number | string | Placeholder | ReplacerTemplate;
 };
 
 type ReplacerValue = {
-  [key: string]: string | ReplacerTemplate;
+  [key: string]:  boolean | number | string | ReplacerTemplate;
 };
 
-const ReplacesSchema = record(string());
+
+const AvailableEnvValueSchema = record(
+  union([
+    string(),
+    boolean(),
+    number(),
+  ])
+)
+
+const ReplacesSchema = record(
+  union([
+    string(),
+    boolean(),
+    number()
+  ])
+)
+
 const SyncenvConfigObjectSchema = union([
   object({
     type: union([literal(".env"), literal(".envrc")]),
     output_dir: string(),
     filename: optional(string()),
-    env: record(string()),
+    env: AvailableEnvValueSchema,
     replaces: optional(ReplacesSchema),
     defaultReducer: optional(string()),
   }),
@@ -62,29 +81,37 @@ export type TemplateType = "template";
 
 export type ConfigObjectType = EnvType | FileType | TemplateType;
 
+
+type EnvObject<Replacer> = {
+  type: EnvType;
+  output_dir: string;
+  filename?: string;
+  env: EnvValue;
+  replaces?: ReplacerValue;
+  defaultReplacer?: Replacer;
+}
+
+type FileObject<Replacer> = {
+  type: FileType;
+  output_path: string;
+  placeholder: string;
+  replaces?: ReplacerValue;
+  defaultReplacer?: Replacer;
+}
+
+type TemplateObject<Replacer> = {
+  type: TemplateType;
+  input_path: string;
+  output_path: string;
+  replaces?: ReplacerValue;
+  defaultReplacer?: Replacer;
+};
+
+
 export type SyncenvConfigObject<Replacer> =
-  | {
-      type: EnvType;
-      output_dir: string;
-      filename?: string;
-      env: EnvValue;
-      replaces?: ReplacerValue;
-      defaultReplacer?: Replacer;
-    }
-  | {
-      type: FileType;
-      output_path: string;
-      placeholder: string;
-      replaces?: ReplacerValue;
-      defaultReplacer?: Replacer;
-    }
-  | {
-      type: TemplateType;
-      input_path: string;
-      output_path: string;
-      replaces?: ReplacerValue;
-      defaultReplacer?: Replacer;
-    };
+  | EnvObject<Replacer>
+  | FileObject<Replacer>
+  | TemplateObject<Replacer>;
 
 type SyncenvConfigInternal<
   Setting = SyncenvConfigObject<string> | SyncenvConfigObject<string>[],
@@ -103,6 +130,10 @@ export type SyncenvConfig<Replacer = string> = SyncenvConfigInternal<
 
 export interface IConfigParser {
   config(configPath?: string): Promise<SyncenvConfig>;
+}
+
+function isEnvType<Replacer>(value: SyncenvConfigObject<Replacer>): value is EnvObject<Replacer> {
+  return value.type === ".env" || value.type === ".envrc";
 }
 
 export class ConfigParser {
@@ -133,6 +164,22 @@ export class ConfigParser {
     validConfig.setting = validConfig.setting.map((v) => {
       if (!v.defaultReplacer && validConfig.defaultReplacer) {
         v.defaultReplacer = validConfig.defaultReplacer;
+      }
+      if (isEnvType(v)) {
+        for (const [key, value] of Object.entries(v.env)) {
+          if(typeof value === 'string' ){
+            if(parseMatch(value)) {
+              v.env = {
+                ...v.env,
+                [key]: `$${key}`,
+              }
+              v.replaces = {
+                ...v.replaces,
+                [key]: value,
+              }
+            }
+          }
+        }
       }
       if (validConfig.replaces) {
         v.replaces = {

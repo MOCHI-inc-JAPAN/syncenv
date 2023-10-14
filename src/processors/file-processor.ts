@@ -5,7 +5,7 @@ import { BaseProcessor } from "./base-processor";
 
 export class FileProcessor extends BaseProcessor {
   constructor(
-    private placeholderMap: Record<string, string>,
+    private placeholderMap: Record<string, string | number | boolean>,
     private config: Extract<SyncenvConfigObject<string>, { type: FileType }>
   ) {
     super();

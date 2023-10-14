@@ -8,6 +8,7 @@ import { BaseReplacer } from "./replacers/base-replacer";
 import { BaseProcessor } from "./processors/base-processor";
 import DefaultReplacer from "./replacers/default-replacer";
 import processors from "./processors";
+import { parseMatch } from "./parseSetting";
 
 export class Syncenv {
   constructor(
@@ -16,17 +17,17 @@ export class Syncenv {
   ) {}
 
   private replacerInputs(
-    replaces: Record<string, string> | undefined,
+    replaces: Record<string, string | number | boolean> | undefined,
     defaultReplacerKey: string = DefaultReplacer.pluginId
-  ): Record<string, Record<string, string>> {
-    const replacersMap: Record<string, Record<string, string>> = {};
+  ): Record<string, Record<string, string | number | boolean>> {
+    const replacersMap: Record<string, Record<string, string | number | boolean>> = {};
     if (!replaces) {
       return replacersMap;
     }
     Object.entries(replaces).forEach(([key, value]) => {
-      const parsedMacher = value.match(/^__(.*):(.*)__$/);
-      if (parsedMacher?.[1] && parsedMacher?.[2]) {
-        const [_, replacerKey, requestId] = parsedMacher;
+      const parseMatchResult = typeof value === 'string' && parseMatch(value);
+      if(parseMatchResult) {
+        const [_, replacerKey, requestId] = parseMatchResult;
         const replacersMapValue = replacersMap[replacerKey] || {};
         replacersMapValue[key] = requestId;
         replacersMap[replacerKey] = replacersMapValue;
@@ -42,9 +43,9 @@ export class Syncenv {
 
   private async createPlaceholderMap(
     replacers: Record<string, BaseReplacer>,
-    replacerInputs: Record<string, Record<string, string>>
-  ): Promise<Record<string, string>> {
-    let placeholderMap: Record<string, string> = {};
+    replacerInputs: Record<string, Record<string, string | number | boolean>>
+  ): Promise<Record<string, string | number | boolean>> {
+    let placeholderMap: Record<string, string | number | boolean> = {};
     for (const [replacerKey, replaceStringMap] of Object.entries(
       replacerInputs
     )) {
@@ -126,3 +127,4 @@ export {
   IConfigParser,
   BaseProcessor,
 };
+

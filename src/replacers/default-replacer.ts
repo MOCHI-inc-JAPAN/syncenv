@@ -5,9 +5,9 @@ export default class DefaultReplacer extends BaseReplacer {
   static pluginId: "default" = "default";
 
   async fetchValues(
-    replaces: Record<string, string>,
+    replaces: Record<string, string | number | boolean>,
     config: SyncenvConfig
-  ): Promise<Record<string, string>> {
+  ): Promise<Record<string, string | number | boolean>> {
     return replaces;
   }
 }

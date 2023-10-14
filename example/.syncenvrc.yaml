@@ -3,6 +3,8 @@ setting:
   - type: '.envrc'
     output_dir: ./artifacts
     env:
+      BOOLEAN_TEST: true
+      NUMBER_TEST: 1
       NOT_REPLACED: NOT_REPLACED
       REPLACED: ${TO_BE_REPLACE}
     replaces:
@@ -11,10 +13,15 @@ setting:
     output_dir: ./artifacts
     filename: .env.dev
     env:
+      BOOLEAN_TEST: ${BOOLEAN_TEST}
+      NUMBER_TEST: ${NUMBER_TEST}
+      ENV_REPLACER_TEST: __default:foo__
       NOT_REPLACED: NOT_REPLACED
       REPLACED: ${TO_BE_REPLACE}
       REPLACED_PROVIDER: $TO_BE_REPLACE_PROVIDER
     replaces:
+      BOOLEAN_TEST: false
+      NUMBER_TEST: 0
       TO_BE_REPLACE: replaceId
       TO_BE_REPLACE_PROVIDER: __gcp:replaceId__
     defaultReplacer: default
