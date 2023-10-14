@@ -1,6 +1,6 @@
 ## Syncenv
 
-A simple env files management for projects.
+A simple env files generator.
 
 ### Install
 
@@ -21,7 +21,7 @@ You can write config in
   `syncenv.config.js`,
 ]
 
-All entirely config in the file followed by an example.
+All entirely config in the file is followed by an example.
 
 ```yaml
 plugins: ['gcp']
@@ -39,6 +39,7 @@ setting:
     env:
       NOT_REPLACED: NOT_REPLACED
       REPLACED: ${TO_BE_REPLACE}
+      REPLACED_DIRECTLY_PROVIDER: __default:to_be_replaced__
       REPLACED_PROVIDER: $TO_BE_REPLACE_PROVIDER
     replaces:
       TO_BE_REPLACE: replaceId
@@ -79,6 +80,10 @@ They are specified with array contains built-in plugin name or path to import no
 Specify to generate file. The .env, .envrc type will generate file from replacer fetchedValues and env object.
 The file type will generate file use placeholder value replaced by replaces object.
 The template type will generate file use read file content specified by input_path and the special syntax stings replaced by replaces object.
+
+#### env (type .env, .envrc only)
+Values to be written in the output file, You can specify directly `__provider:(requestId)__` for replacements.
+
 
 #### replaces [ Object ] < optional >
 
