@@ -5,23 +5,30 @@ setting:
     env:
       BOOLEAN_TEST: true
       NUMBER_TEST: 1
+      DOUBLE_QUATE_TEST: ${DOUBLE_QUATE_TEST}
       NOT_REPLACED: NOT_REPLACED
       REPLACED: ${TO_BE_REPLACE}
     replaces:
+      DOUBLE_QUATE_TEST: 'double "quate test'
       TO_BE_REPLACE: replaceId
   - type: '.env'
     output_dir: ./artifacts
     filename: .env.dev
+    quate: "'"
     env:
       BOOLEAN_TEST: ${BOOLEAN_TEST}
       NUMBER_TEST: ${NUMBER_TEST}
       ENV_REPLACER_TEST: __default:foo__
+      QUATE_TEST: $QUATE_TEST
+      ESCAPE_TEST: $ESCAPE_TEST
       NOT_REPLACED: NOT_REPLACED
       REPLACED: ${TO_BE_REPLACE}
       REPLACED_PROVIDER: $TO_BE_REPLACE_PROVIDER
     replaces:
       BOOLEAN_TEST: false
       NUMBER_TEST: 0
+      QUATE_TEST: "single 'quate test"
+      ESCAPE_TEST: "\n\t\r'\"@$#-_=*&^\\%~`"
       TO_BE_REPLACE: replaceId
       TO_BE_REPLACE_PROVIDER: __gcp:replaceId__
     defaultReplacer: default

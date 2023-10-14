@@ -10,6 +10,7 @@ import {
   array,
   boolean,
   number,
+  coerce,
 } from "valibot";
 import { resolve } from "node:path";
 import { parseMatch } from "../parseSetting";
@@ -50,6 +51,7 @@ const SyncenvConfigObjectSchema = union([
     filename: optional(string()),
     env: AvailableEnvValueSchema,
     replaces: optional(ReplacesSchema),
+    quate: coerce(string(), (val) =>  val as string ?? '"'),
     defaultReducer: optional(string()),
   }),
   object({
@@ -87,6 +89,7 @@ type EnvObject<Replacer> = {
   output_dir: string;
   filename?: string;
   env: EnvValue;
+  quate: string;
   replaces?: ReplacerValue;
   defaultReplacer?: Replacer;
 }
