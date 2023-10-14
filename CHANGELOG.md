@@ -1,5 +1,11 @@
 # syncenv
 
+## 1.0.3
+
+### Patch Changes
+
+- 969a3aa: accept number boolean value
+
 ## 1.0.2
 
 ### Patch Changes
