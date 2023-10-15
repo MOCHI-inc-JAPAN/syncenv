@@ -220,9 +220,9 @@ setting:
   - type: '.env'
     output_dir: ./artifacts
     env:
-      REPLACED: ${TO_BE_REPLACE}
+      REPLACED: ${REPLACED}
     replaces:
-      REPLACED: studeng
+      REPLACED: student
     pipes:
       REPLACED: 'postfix(1)'
     defaultReplacer: custom
