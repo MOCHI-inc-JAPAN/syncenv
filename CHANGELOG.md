@@ -1,5 +1,11 @@
 # syncenv
 
+## 1.1.0
+
+### Minor Changes
+
+- 07acc7c: new feature pipe
+
 ## 1.0.4
 
 ### Patch Changes
