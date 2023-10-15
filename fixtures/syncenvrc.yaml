@@ -14,9 +14,19 @@ setting:
       NOT_REPLACED: NOT_REPLACED
       REPLACED: ${TO_BE_REPLACE}
       REPLACED_PROVIDER: $TO_BE_REPLACE_PROVIDER
+      PIPE_TEST: $PIPE_TEST
+      PIPE_REGEXP_TEST: $PIPE_REGEXP_TEST
+      PIPE_MULTIPLE_TEST: $PIPE_MULTIPLE_TEST
     replaces:
       TO_BE_REPLACE: replaceId
       TO_BE_REPLACE_PROVIDER: __gcp:replaceId__
+      PIPE_TEST: "PIPE_FAILED"
+      PIPE_REGEXP_TEST: "PIPE_FAILED"
+      PIPE_MULTIPLE_TEST: PIPE_FAILED
+    pipes:
+      PIPE_TEST: 'replace(FAILED, SUCCESS)'
+      PIPE_REGEXP_TEST: 'replace(FAILED, *UCCE**) | replace(/\*/g, S)'
+      PIPE_MULTIPLE_TEST: ['replace(FAILED, "SUCCESS ")', trim]
     defaultReplacer: default
   - type: file
     output_path: ./artifacts/file-output.txt

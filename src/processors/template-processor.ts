@@ -20,10 +20,10 @@ export class TemplateProcessor extends BaseProcessor {
       ? this.config.output_path
       : resolve(global.process.cwd(), this.config.output_path);
     const file = await readFile(inputPath);
-    console.log(`${inputPath} read.`);
+    console.info(`${inputPath} read.`);
     const contents = this.replaceValue(file.toString(), this.placeholderMap);
     return writeFile(outPath, contents).then(() => {
-      console.log(`${outPath} created.`);
+      console.info(`${outPath} created.`);
     });
   }
 }

@@ -27,7 +27,7 @@ export class EnvProcessor extends BaseProcessor {
       }
     });
     return writeFile(outPath, contents.join(EOL)).then(() => {
-      console.log(`${outPath} created.`);
+      console.info(`${outPath} created.`);
     });
   }
 

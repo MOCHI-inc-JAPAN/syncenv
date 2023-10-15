@@ -1,7 +1,7 @@
 import { test, expect, mock } from "bun:test";
 import * as configuration from "../fixtures/syncenvrc.yaml";
 import { ConfigResolver, type IConfigResolver } from "./config-resolver";
-import { IConfigParser, SyncenvConfig } from "./config-parser";
+import { ConfigParser, IConfigParser, SyncenvConfig } from "./config-parser";
 import { PluginInterface } from "./plugins/plugin-interface";
 import GcpSecretPlugin, {
   IGcpSecretReplacerClient,
@@ -13,7 +13,7 @@ import DefaultPlugin from "./plugins/default-plugin";
 
 class ConfigParserMock implements IConfigParser {
   async config() {
-    return configuration;
+    return new ConfigParser().parseConfig(configuration);
   }
 }
 

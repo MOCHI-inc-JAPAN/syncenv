@@ -170,11 +170,14 @@ export class ConfigParser {
       throw Error("configFile does not exist.");
     }
 
+    return this.parseConfig(configResult.config)
+  }
+
+  parseConfig(configFile: object): SyncenvConfig {
     const validConfig = parse(
       SyncenvConfigSchema,
-      configResult.config
+      configFile
     ) as SyncenvConfigInternal;
-
     if (!Array.isArray(validConfig.setting)) {
       validConfig.setting = [validConfig.setting];
     }
@@ -207,7 +210,6 @@ export class ConfigParser {
       }
       return v;
     });
-
-    return validConfig as SyncenvConfig;
+    return validConfig as SyncenvConfig
   }
 }

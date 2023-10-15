@@ -5,7 +5,7 @@ import {
   type SyncenvConfig,
 } from "./config-parser";
 import { ConfigResolver, type IConfigResolver } from "./config-resolver";
-import { PluginInterface as Plugin} from "./plugins/plugin-interface";
+import { PluginInterface as Plugin } from "./plugins/plugin-interface";
 import { BaseProcessor } from "./processors/base-processor";
 import DefaultPlugin from "./plugins/default-plugin";
 import processors from "./processors";
@@ -17,19 +17,21 @@ export class Syncenv {
 
   constructor(
     params?: {
-      configPath?: string,
-      config?: SyncenvConfig,
+      configPath?: string;
+      config?: SyncenvConfig;
     },
     interfaces?: {
-      configParser :IConfigParser
-      configResolver: IConfigResolver
+      configParser: IConfigParser;
+      configResolver: IConfigResolver;
     }
   ) {
     const {
-        configParser = new ConfigParser(),
-        configResolver = new ConfigResolver()
+      configParser = new ConfigParser(),
+      configResolver = new ConfigResolver(),
     } = interfaces || {};
-    this.config = Promise.resolve(params?.config || configParser.config(params?.configPath));
+    this.config = Promise.resolve(
+      params?.config || configParser.config(params?.configPath)
+    );
     this.configResolver = configResolver;
   }
 
@@ -37,13 +39,16 @@ export class Syncenv {
     replaces: Record<string, string | number | boolean> | undefined,
     defaultReplacerKey: string = DefaultPlugin.pluginId
   ): Record<string, Record<string, string | number | boolean>> {
-    const replacersMap: Record<string, Record<string, string | number | boolean>> = {};
+    const replacersMap: Record<
+      string,
+      Record<string, string | number | boolean>
+    > = {};
     if (!replaces) {
       return replacersMap;
     }
     Object.entries(replaces).forEach(([key, value]) => {
-      const parseMatchResult = typeof value === 'string' && parseMatch(value);
-      if(parseMatchResult) {
+      const parseMatchResult = typeof value === "string" && parseMatch(value);
+      if (parseMatchResult) {
         const [_, replacerKey, requestId] = parseMatchResult;
         const replacersMapValue = replacersMap[replacerKey] || {};
         replacersMapValue[key] = requestId;
@@ -68,7 +73,10 @@ export class Syncenv {
       replacerInputs
     )) {
       const replacer = replacers[replacerKey];
-      const addition = await replacer.fetchValues(replaceStringMap, await this.config);
+      const addition = await replacer.fetchValues(
+        replaceStringMap,
+        await this.config
+      );
       placeholderMap = {
         ...placeholderMap,
         ...addition,
@@ -82,33 +90,43 @@ export class Syncenv {
 
   private async resolvePipes(
     placeholderMap: Record<string, string | number | boolean>,
-    pipeOptions: PipeOptions,
+    pipeOptions: PipeOptions
   ): Promise<Record<string, string | number | boolean>> {
     const pipes = await this.configResolver.loadPipes(await this.config);
     for (let [placeholder, pipeOptionValue] of Object.entries(pipeOptions)) {
-      const pipeOptionValues = typeof pipeOptionValue === 'string' ? this.parseStringPipeOptionValue(pipeOptionValue) : pipeOptionValue.map(v=> v.trim());
-      if(placeholderMap[placeholder]) {
-        for(const pipeOptionValue of pipeOptionValues) {
-          const [pipeId, pipeArgs] = this.parsePipeOptionValue(pipeOptionValue)
-          placeholderMap[placeholder] = pipes[pipeId](placeholderMap[placeholder],...pipeArgs)
+      const pipeOptionValues =
+        typeof pipeOptionValue === "string"
+          ? this.parseStringPipeOptionValue(pipeOptionValue)
+          : pipeOptionValue.map((v) => v.trim());
+      if (placeholderMap[placeholder]) {
+        for (const pipeOptionValue of pipeOptionValues) {
+          const [pipeId, pipeArgs] = this.parsePipeOptionValue(pipeOptionValue);
+          const pipeFunction = pipes[pipeId];
+          if (pipeFunction) {
+            placeholderMap[placeholder] = pipeFunction(
+              placeholderMap[placeholder],
+              ...pipeArgs
+            );
+          } else {
+            console.warn(`Pipe ${pipeId} is not found. Skip.`);
+          }
         }
       }
     }
     return placeholderMap;
   }
 
-  private parsePipeOptionValue (value: string): [string, string[]] {
-    const [key, args] = value.match(/(\w+)\((.*)\)/) || [];
-    if(key && args) {
-      return [
-        key,
-        args.split(",").map((v) => v.trim())
-      ]
+  private parsePipeOptionValue(value: string): [string, string[]] {
+    const [_, key, args] = value.match(/(\w+)\((.*)\)/) || [];
+    if (key && args) {
+      return [key, args.split(",").map((v) => {
+        return v.trim().replace(/^(['"])(.*)(['"])$/, '$2')
+      })];
     }
-    return [value, []]
+    return [value, []];
   }
 
-  private parseStringPipeOptionValue (value: string) {
+  private parseStringPipeOptionValue(value: string) {
     return value.split("|").map((v) => v.trim());
   }
 
@@ -175,7 +193,7 @@ export class Syncenv {
 function run(...options: string[]) {
   const { configPath, exit } = Syncenv.parseOptions(...options);
   if (exit) return;
-  new Syncenv({configPath}).run();
+  return new Syncenv({ configPath }).run();
 }
 
 export {
@@ -184,6 +202,5 @@ export {
   IConfigResolver,
   IConfigParser,
   BaseProcessor,
-  run
+  run,
 };
-
