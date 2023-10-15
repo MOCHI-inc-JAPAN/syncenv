@@ -19,7 +19,7 @@ export class FileProcessor extends BaseProcessor {
       this.placeholderMap
     );
     return writeFile(outPath, contents).then(() => {
-      console.log(`${outPath} created.`);
+      console.info(`${outPath} created.`);
     });
   }
 }

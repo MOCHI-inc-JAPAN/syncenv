@@ -1,4 +1,4 @@
-import {BaseReplacer, SyncenvConfig} from '@tkow/syncenv'
+import {Plugin, SyncenvConfig} from '@tkow/syncenv'
 
 class GcpSecretReplacerClientMock {
   private current: number = 0
@@ -21,7 +21,7 @@ class GcpSecretReplacerClientMock {
   }
 }
 
-export default class GcpSecretReplacer extends BaseReplacer {
+export default class GcpSecretPlugin extends Plugin {
   static pluginId: "gcp" = "gcp";
 
   constructor(private client: GcpSecretReplacerClientMock = new GcpSecretReplacerClientMock()) {

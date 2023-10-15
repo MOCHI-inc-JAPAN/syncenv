@@ -1,15 +1,14 @@
 import { test, expect, mock } from "bun:test";
 import * as configuration from "../fixtures/syncenvrc.yaml";
 import { ConfigResolver, type IConfigResolver } from "./config-resolver";
-import { IConfigParser } from "./config-parser";
-import { BaseReplacer } from "./replacers/base-replacer";
-import GcpSecretReplacer, {
+import { IConfigParser, SyncenvConfig } from "./config-parser";
+import { PluginInterface } from "./plugins/plugin-interface";
+import GcpSecretPlugin, {
   IGcpSecretReplacerClient,
-} from "./replacers/gcp-secret-replacer";
-import { Syncenv } from "./index";
+} from "./plugins/gcp-secret-plugin";
 import { google } from "@google-cloud/secret-manager/build/protos/protos";
 import { CallOptions, Callback } from "google-gax";
-import DefaultReplacer from "./replacers/default-replacer";
+import DefaultPlugin from "./plugins/default-plugin";
 
 class ConfigParserMock implements IConfigParser {
   async config() {
@@ -81,11 +80,11 @@ class GcpSecretReplacerClientMock implements IGcpSecretReplacerClient {
   }
 }
 
-class ConfigResolverMock implements IConfigResolver {
-  async resolveReplacers(arg: unknown): Promise<Record<string, BaseReplacer>> {
+class ConfigResolverMock extends ConfigResolver {
+  async resolvePlugins(arg: unknown): Promise<Record<string, PluginInterface>> {
     return {
-      [DefaultReplacer.pluginId]: new DefaultReplacer(),
-      [GcpSecretReplacer.pluginId]: new GcpSecretReplacer(
+      [DefaultPlugin.pluginId]: new DefaultPlugin(),
+      [GcpSecretPlugin.pluginId]: new GcpSecretPlugin(
         new GcpSecretReplacerClientMock()
       ),
     };
@@ -95,7 +94,7 @@ class ConfigResolverMock implements IConfigResolver {
 test("file test", async () => {
   const configParser = new ConfigParserMock();
   const configResolver = new ConfigResolver();
-  const replacers = await configResolver.resolveReplacers(
+  const replacers = await configResolver.resolvePlugins(
     await configParser.config()
   );
   expect(configuration).toBeTruthy();

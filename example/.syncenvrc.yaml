@@ -1,4 +1,4 @@
-plugins: ['./custom-gcp']
+plugins: ['./custom-gcp', './custom-plugins/custom-plugin', '@tkow/npm-plugin']
 setting:
   - type: '.envrc'
     output_dir: ./artifacts
@@ -8,9 +8,16 @@ setting:
       DOUBLE_QUATE_TEST: ${DOUBLE_QUATE_TEST}
       NOT_REPLACED: NOT_REPLACED
       REPLACED: ${TO_BE_REPLACE}
+      PLUGIN_TEST: ${PLUGIN_TEST}
+      PLUGIN_NPM_TEST: $PLUGIN_NPM_TEST
     replaces:
       DOUBLE_QUATE_TEST: 'double "quate test'
       TO_BE_REPLACE: replaceId
+      PLUGIN_TEST: '__custom:test__'
+      PLUGIN_NPM_TEST: '__npm:test__'
+    pipes:
+      PLUGIN_TEST: 'postfix(1)'
+      PLUGIN_NPM_TEST: 'npm-postfix'
   - type: '.env'
     output_dir: ./artifacts
     filename: .env.dev
@@ -21,6 +28,9 @@ setting:
       ENV_REPLACER_TEST: __default:foo__
       QUATE_TEST: $QUATE_TEST
       ESCAPE_TEST: $ESCAPE_TEST
+      PIPE_TEST: $PIPE_TEST
+      PIPE_REGEXP_TEST: $PIPE_REGEXP_TEST
+      PIPE_MULTIPLE_TEST: $PIPE_MULTIPLE_TEST
       NOT_REPLACED: NOT_REPLACED
       REPLACED: ${TO_BE_REPLACE}
       REPLACED_PROVIDER: $TO_BE_REPLACE_PROVIDER
@@ -29,8 +39,15 @@ setting:
       NUMBER_TEST: 0
       QUATE_TEST: "single 'quate test"
       ESCAPE_TEST: "\n\t\r'\"@$#-_=*&^\\%~`"
+      PIPE_TEST: "PIPE_FAILED"
+      PIPE_REGEXP_TEST: "PIPE_FAILED"
+      PIPE_MULTIPLE_TEST: PIPE_FAILED
       TO_BE_REPLACE: replaceId
       TO_BE_REPLACE_PROVIDER: __gcp:replaceId__
+    pipes:
+      PIPE_TEST: 'replace(FAILED, SUCCESS)'
+      PIPE_REGEXP_TEST: 'replace(FAILED, *UCCE**) | replace(/\*/g, S)'
+      PIPE_MULTIPLE_TEST: ['replace(FAILED, "SUCCESS ")', trim]
     defaultReplacer: default
   - type: file
     output_path: ./artifacts/file-output.txt

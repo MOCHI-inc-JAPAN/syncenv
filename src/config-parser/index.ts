@@ -11,6 +11,7 @@ import {
   boolean,
   number,
   coerce,
+  Output
 } from "valibot";
 import { resolve } from "node:path";
 import { parseMatch } from "../parseSetting";
@@ -44,6 +45,13 @@ const ReplacesSchema = record(
   ])
 )
 
+const PipeSchema = record(
+  union([
+    string(),
+    array(string())
+  ])
+)
+
 const SyncenvConfigObjectSchema = union([
   object({
     type: union([literal(".env"), literal(".envrc")]),
@@ -51,6 +59,7 @@ const SyncenvConfigObjectSchema = union([
     filename: optional(string()),
     env: AvailableEnvValueSchema,
     replaces: optional(ReplacesSchema),
+    pipes: optional(PipeSchema),
     quate: coerce(string(), (val) =>  val as string ?? '"'),
     defaultReducer: optional(string()),
   }),
@@ -59,6 +68,7 @@ const SyncenvConfigObjectSchema = union([
     output_path: string(),
     placeholder: string(),
     replaces: optional(ReplacesSchema),
+    pipes: optional(PipeSchema),
     defaultReducer: optional(string()),
   }),
   object({
@@ -66,6 +76,7 @@ const SyncenvConfigObjectSchema = union([
     input_path: string(),
     output_path: string(),
     replaces: optional(ReplacesSchema),
+    pipes: optional(PipeSchema),
     defaultReducer: optional(string()),
   }),
 ]);
@@ -83,6 +94,7 @@ export type TemplateType = "template";
 
 export type ConfigObjectType = EnvType | FileType | TemplateType;
 
+export type PipeOptions = Output<typeof PipeSchema>;
 
 type EnvObject<Replacer> = {
   type: EnvType;
@@ -91,6 +103,7 @@ type EnvObject<Replacer> = {
   env: EnvValue;
   quate: string;
   replaces?: ReplacerValue;
+  pipes?: PipeOptions;
   defaultReplacer?: Replacer;
 }
 
@@ -99,6 +112,7 @@ type FileObject<Replacer> = {
   output_path: string;
   placeholder: string;
   replaces?: ReplacerValue;
+  pipes?: PipeOptions;
   defaultReplacer?: Replacer;
 }
 
@@ -107,6 +121,7 @@ type TemplateObject<Replacer> = {
   input_path: string;
   output_path: string;
   replaces?: ReplacerValue;
+  pipes?: PipeOptions;
   defaultReplacer?: Replacer;
 };
 
@@ -118,10 +133,10 @@ export type SyncenvConfigObject<Replacer> =
 
 type SyncenvConfigInternal<
   Setting = SyncenvConfigObject<string> | SyncenvConfigObject<string>[],
-  DefaultReplacer = string
+  DefaultPlugin = string
 > = {
   replaces?: ReplacerValue;
-  defaultReplacer?: DefaultReplacer;
+  defaultReplacer?: DefaultPlugin;
   plugins?: string[];
   setting: Setting;
 };
@@ -155,11 +170,14 @@ export class ConfigParser {
       throw Error("configFile does not exist.");
     }
 
+    return this.parseConfig(configResult.config)
+  }
+
+  parseConfig(configFile: object): SyncenvConfig {
     const validConfig = parse(
       SyncenvConfigSchema,
-      configResult.config
+      configFile
     ) as SyncenvConfigInternal;
-
     if (!Array.isArray(validConfig.setting)) {
       validConfig.setting = [validConfig.setting];
     }
@@ -192,7 +210,6 @@ export class ConfigParser {
       }
       return v;
     });
-
-    return validConfig as SyncenvConfig;
+    return validConfig as SyncenvConfig
   }
 }

@@ -1,55 +1,75 @@
 import { SyncenvConfig } from "./config-parser";
 import {
-  BaseReplacer,
-  BaseReplacerConstructor,
-} from "./replacers/base-replacer";
-import GcpSecretReplacer from "./replacers/gcp-secret-replacer";
-import DefaultReplacer from "./replacers/default-replacer";
+  PipeInterface,
+  PluginInterface,
+  PluginInterfaceConstructor,
+} from "./plugins/plugin-interface";
+import GcpSecretPlugin from "./plugins/gcp-secret-plugin";
+import DefaultPlugin from "./plugins/default-plugin";
 import { resolve } from "node:path";
 
 const BUILTIN_REPLACERS = [
-  GcpSecretReplacer.pluginId,
-  DefaultReplacer.pluginId,
+  GcpSecretPlugin.pluginId,
+  DefaultPlugin.pluginId,
 ] as const;
 
 type BuitinReplacers = (typeof BUILTIN_REPLACERS)[number];
 
 export interface IConfigResolver {
-  resolveReplacers(arg: SyncenvConfig): Promise<Record<string, BaseReplacer>>;
+  resolvePlugins(arg: SyncenvConfig): Promise<Record<string, PluginInterface>>;
+  loadPipes(arg: SyncenvConfig): Promise<Record<string, PipeInterface['pipe']>>
 }
 
 export class ConfigResolver {
-  private builtinReplacers(str: BuitinReplacers) {
+  private plugins: Record<string, PluginInterface> | undefined;
+
+  private builtinPlugins(str: BuitinReplacers) {
     return {
-      [GcpSecretReplacer.pluginId]: () =>
-        import("./replacers/gcp-secret-replacer"),
-      [DefaultReplacer.pluginId]: () => import("./replacers/default-replacer"),
+      [GcpSecretPlugin.pluginId]: () =>
+        import("./plugins/gcp-secret-plugin"),
+      [DefaultPlugin.pluginId]: () => import("./plugins/default-plugin"),
     }[str];
   }
 
-  private async loadReplacer(str: string) {
+  private async loadPlugin(str: string) {
     if (BUILTIN_REPLACERS.includes(str as BuitinReplacers)) {
-      return await this.builtinReplacers(str as BuitinReplacers)();
+      return await this.builtinPlugins(str as BuitinReplacers)();
     }
     const importPath = str.startsWith(".") ? resolve(process.cwd(), str) : str;
     return await import(importPath);
   }
 
-  async resolveReplacers(
+  async resolvePlugins(
     arg: SyncenvConfig
-  ): Promise<Record<string, BaseReplacer>> {
-    const replacers: Record<string, BaseReplacer> = {};
+  ): Promise<Record<string, PluginInterface>> {
+    if(this.plugins) return this.plugins;
+    this.plugins = {};
     const plugins: string[] = [
       ...new Set(
-        [DefaultReplacer.pluginId as string].concat(arg.plugins || [])
+        [DefaultPlugin.pluginId as string].concat(arg.plugins || [])
       ),
     ];
     for (const plugin of plugins) {
-      const Replacer: BaseReplacerConstructor = (
-        await this.loadReplacer(plugin)
+      const LoadedPlugin: PluginInterfaceConstructor = (
+        await this.loadPlugin(plugin)
       ).default;
-      replacers[Replacer.pluginId] = new Replacer();
+      this.plugins[LoadedPlugin.pluginId] = new LoadedPlugin();
     }
-    return replacers;
+    return this.plugins;
+  }
+
+  async loadPipes(
+    arg: SyncenvConfig
+  ): Promise<Record<string, PipeInterface['pipe']>> {
+    this.plugins = await this.resolvePlugins(arg);
+    return Object.values(this.plugins).reduce(
+      (current, plugin) => {
+        plugin.loadPipes().map((pipe) => {
+          current[pipe.pipeId] = pipe.pipe
+        })
+        return current
+      },
+      {} as Record<string, PipeInterface['pipe']>
+    )
   }
 }

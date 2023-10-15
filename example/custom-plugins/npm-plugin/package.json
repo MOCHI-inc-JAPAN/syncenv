@@ -1,0 +1,17 @@
+{
+  "name": "@tkow/npm-plugin",
+  "version": "1.0.0",
+  "description": "",
+  "main": "npm-plugin.js",
+  "files": [
+    "npm-plugin.js"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@tkow/syncenv": "file:../../../"
+  },
+  "peerDependencies": {
+    "@tkow/syncenv": "*"
+  }
+}
