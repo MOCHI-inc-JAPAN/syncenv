@@ -1,5 +1,11 @@
 # syncenv
 
+## 1.1.1
+
+### Patch Changes
+
+- 572b4c9: fix: replace filter accurately
+
 ## 1.1.0
 
 ### Minor Changes
