@@ -7,15 +7,15 @@ export const replacePipe: PipeInterface = {
       throw new Error("replace pipe requires match and replaced");
     const current = value.toString();
     let matcher: string | RegExp = match;
-    if (match.startsWith("/")) {
-      const matchedRegExp = match.match(/\/(.*)\/([gimuys]{0,6})$/);
-      if (matchedRegExp) {
-        matcher = new RegExp(matchedRegExp[1], matchedRegExp[2]);
-      } else {
-        console.warn(`No match ${match} RegExp. Skip.`)
-      }
+    const matchedRegExp = match.match(/\/(.*)\/([gimuys]{0,6})$/);
+    if (matchedRegExp) {
+      matcher = new RegExp(matchedRegExp[1], matchedRegExp[2]);
     }
-    return current.replace(matcher, replaced);
+    const finalValue = current.replace(matcher, replaced);
+    if(finalValue === current) {
+      console.warn(`No effect ${match} in replace filter.`)
+    }
+    return finalValue
   },
 };
 
