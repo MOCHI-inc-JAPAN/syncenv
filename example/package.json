@@ -4,12 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "swc ./custom-gcp.ts -o ./custom-gcp.js",
+    "build": "swc ./custom-gcp.ts -o ./custom-gcp.js && swc ./custom-plugins/**/*.ts -d ./custom-plugins",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@tkow/npm-plugin": "file:custom-plugins/npm-plugin",
     "@tkow/syncenv": "file:.."
   }
 }

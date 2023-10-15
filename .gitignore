@@ -146,5 +146,6 @@ dist
 tmp
 
 .npmrc
+!/example/.npmrc
 
 artifacts/

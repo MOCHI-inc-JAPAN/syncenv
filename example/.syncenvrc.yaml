@@ -1,4 +1,4 @@
-plugins: ['./custom-gcp']
+plugins: ['./custom-gcp', './custom-plugins/custom-plugin', '@tkow/npm-plugin']
 setting:
   - type: '.envrc'
     output_dir: ./artifacts
@@ -8,9 +8,16 @@ setting:
       DOUBLE_QUATE_TEST: ${DOUBLE_QUATE_TEST}
       NOT_REPLACED: NOT_REPLACED
       REPLACED: ${TO_BE_REPLACE}
+      PLUGIN_TEST: ${PLUGIN_TEST}
+      PLUGIN_NPM_TEST: $PLUGIN_NPM_TEST
     replaces:
       DOUBLE_QUATE_TEST: 'double "quate test'
       TO_BE_REPLACE: replaceId
+      PLUGIN_TEST: '__custom:test__'
+      PLUGIN_NPM_TEST: '__npm:test__'
+    pipes:
+      PLUGIN_TEST: 'postfix(1)'
+      PLUGIN_NPM_TEST: 'npm-postfix'
   - type: '.env'
     output_dir: ./artifacts
     filename: .env.dev
