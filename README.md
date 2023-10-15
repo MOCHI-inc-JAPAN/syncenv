@@ -235,3 +235,21 @@ REPLACED=pre-student-1
 ```
 
 You can see the detail in our example project.
+
+
+## Builtin Replacer
+
+## gcp
+
+The gcp plugin can fetch and embet value from google secret manager specify secret varsion.
+
+```yaml
+plugins: ['gcp'] # you need specify gcp if you this feature.
+  env:
+    VALUE: $VALUE
+  replaces:
+      VALUE: projects/{your projectId}/secrets/{your secret name}/versions/${your secre version number}
+```
+
+Before runnin comand, you must login by 'gcloud auth application-default login' or set a credencial path to GOOGLE_APPLICATION_CREDENTIALS and satisfy your account have privilege of the secret manager access.
+See the detail in https://cloud.google.com/docs/authentication/getting-started.
