@@ -2,7 +2,7 @@ import {
   SecretManagerServiceClient,
   type SecretManagerServiceClient as ISecretManagerServiceClient,
 } from "@google-cloud/secret-manager";
-import { BaseReplacer } from "./base-replacer";
+import { PluginInterface } from "./plugin-interface";
 import { SyncenvConfig } from "../config-parser";
 
 export type IGcpSecretReplacerClient = Pick<
@@ -10,7 +10,7 @@ export type IGcpSecretReplacerClient = Pick<
   "accessSecretVersion"
 >;
 
-export default class GcpSecretReplacer extends BaseReplacer {
+export default class GcpSecretPlugin extends PluginInterface {
   static pluginId: "gcp" = "gcp";
   private results: Record<string, string> = {};
 

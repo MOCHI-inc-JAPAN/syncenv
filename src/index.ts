@@ -1,24 +1,41 @@
 import {
   ConfigParser,
+  PipeOptions,
   type IConfigParser,
   type SyncenvConfig,
 } from "./config-parser";
 import { ConfigResolver, type IConfigResolver } from "./config-resolver";
-import { BaseReplacer } from "./replacers/base-replacer";
+import { PluginInterface as Plugin} from "./plugins/plugin-interface";
 import { BaseProcessor } from "./processors/base-processor";
-import DefaultReplacer from "./replacers/default-replacer";
+import DefaultPlugin from "./plugins/default-plugin";
 import processors from "./processors";
 import { parseMatch } from "./parseSetting";
 
 export class Syncenv {
+  private config: Promise<SyncenvConfig>;
+  private configResolver: IConfigResolver;
+
   constructor(
-    private configParser: IConfigParser = new ConfigParser(),
-    private configResolver: IConfigResolver = new ConfigResolver()
-  ) {}
+    params?: {
+      configPath?: string,
+      config?: SyncenvConfig,
+    },
+    interfaces?: {
+      configParser :IConfigParser
+      configResolver: IConfigResolver
+    }
+  ) {
+    const {
+        configParser = new ConfigParser(),
+        configResolver = new ConfigResolver()
+    } = interfaces || {};
+    this.config = Promise.resolve(params?.config || configParser.config(params?.configPath));
+    this.configResolver = configResolver;
+  }
 
   private replacerInputs(
     replaces: Record<string, string | number | boolean> | undefined,
-    defaultReplacerKey: string = DefaultReplacer.pluginId
+    defaultReplacerKey: string = DefaultPlugin.pluginId
   ): Record<string, Record<string, string | number | boolean>> {
     const replacersMap: Record<string, Record<string, string | number | boolean>> = {};
     if (!replaces) {
@@ -42,24 +59,60 @@ export class Syncenv {
   }
 
   private async createPlaceholderMap(
-    replacers: Record<string, BaseReplacer>,
-    replacerInputs: Record<string, Record<string, string | number | boolean>>
+    replacers: Record<string, Plugin>,
+    replacerInputs: Record<string, Record<string, string | number | boolean>>,
+    pipeOptions?: PipeOptions
   ): Promise<Record<string, string | number | boolean>> {
     let placeholderMap: Record<string, string | number | boolean> = {};
     for (const [replacerKey, replaceStringMap] of Object.entries(
       replacerInputs
     )) {
       const replacer = replacers[replacerKey];
-      const addition = await replacer.fetchValues(replaceStringMap);
+      const addition = await replacer.fetchValues(replaceStringMap, await this.config);
       placeholderMap = {
         ...placeholderMap,
         ...addition,
       };
     }
+    if (pipeOptions) {
+      placeholderMap = await this.resolvePipes(placeholderMap, pipeOptions);
+    }
     return placeholderMap;
   }
 
-  private parseOptions(...options: string[]): {
+  private async resolvePipes(
+    placeholderMap: Record<string, string | number | boolean>,
+    pipeOptions: PipeOptions,
+  ): Promise<Record<string, string | number | boolean>> {
+    const pipes = await this.configResolver.loadPipes(await this.config);
+    for (let [placeholder, pipeOptionValue] of Object.entries(pipeOptions)) {
+      const pipeOptionValues = typeof pipeOptionValue === 'string' ? this.parseStringPipeOptionValue(pipeOptionValue) : pipeOptionValue.map(v=> v.trim());
+      if(placeholderMap[placeholder]) {
+        for(const pipeOptionValue of pipeOptionValues) {
+          const [pipeId, pipeArgs] = this.parsePipeOptionValue(pipeOptionValue)
+          placeholderMap[placeholder] = pipes[pipeId](placeholderMap[placeholder],...pipeArgs)
+        }
+      }
+    }
+    return placeholderMap;
+  }
+
+  private parsePipeOptionValue (value: string): [string, string[]] {
+    const [key, args] = value.match(/(\w+)\((.*)\)/) || [];
+    if(key && args) {
+      return [
+        key,
+        args.split(",").map((v) => v.trim())
+      ]
+    }
+    return [value, []]
+  }
+
+  private parseStringPipeOptionValue (value: string) {
+    return value.split("|").map((v) => v.trim());
+  }
+
+  static parseOptions(...options: string[]): {
     exit?: boolean;
     configPath?: string;
   } {
@@ -96,11 +149,9 @@ export class Syncenv {
     return {};
   }
 
-  async run(...options: string[]) {
-    const { configPath, exit } = this.parseOptions(...options);
-    if (exit) return;
-    const config = await this.configParser.config(configPath);
-    const replacers = await this.configResolver.resolveReplacers(config);
+  async run() {
+    const config = await this.config;
+    const replacers = await this.configResolver.resolvePlugins(config);
     const setting = config.setting;
     const queues: Promise<any>[] = [];
     for (const params of setting) {
@@ -110,7 +161,8 @@ export class Syncenv {
       );
       const placeholderMapping = await this.createPlaceholderMap(
         replacers,
-        replacerInputs
+        replacerInputs,
+        params.pipes
       );
       const processorClass = processors[params.type];
       const processor = new processorClass(placeholderMapping, params);
@@ -120,11 +172,18 @@ export class Syncenv {
   }
 }
 
+function run(...options: string[]) {
+  const { configPath, exit } = Syncenv.parseOptions(...options);
+  if (exit) return;
+  new Syncenv({configPath}).run();
+}
+
 export {
-  BaseReplacer,
+  Plugin,
   SyncenvConfig,
   IConfigResolver,
   IConfigParser,
   BaseProcessor,
+  run
 };
 
