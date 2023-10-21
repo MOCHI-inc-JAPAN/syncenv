@@ -86,6 +86,7 @@ const SyncenvConfigSchema = object({
   defaultReplacer: optional(string()),
   plugins: optional(array(string())),
   setting: union([SyncenvConfigObjectSchema, array(SyncenvConfigObjectSchema)]),
+  cache: coerce(boolean(), (val) =>  typeof val === 'boolean' ? val : true),
 });
 
 export type EnvType = ".env" | ".envrc";
@@ -138,6 +139,7 @@ type SyncenvConfigInternal<
   replaces?: ReplacerValue;
   defaultReplacer?: DefaultPlugin;
   plugins?: string[];
+  cache?: boolean;
   setting: Setting;
 };
 

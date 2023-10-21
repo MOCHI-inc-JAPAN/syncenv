@@ -3,6 +3,7 @@ import { BaseProcessor } from "./base-processor";
 import { join, resolve } from "node:path";
 import { writeFile } from "../writeFile";
 import { EOL } from "node:os";
+import { resolveOutputPath } from "../pathResolver";
 
 export class EnvProcessor extends BaseProcessor {
   constructor(
@@ -12,10 +13,7 @@ export class EnvProcessor extends BaseProcessor {
     super();
   }
   async process(): Promise<void> {
-    const outDir = this.config.output_dir.startsWith("/")
-      ? this.config.output_dir
-      : resolve(global.process.cwd(), this.config.output_dir);
-    const outPath = join(outDir, this.config.filename || this.config.type);
+    const outPath = resolveOutputPath(this.config)
     const contents = Object.entries(this.config.env).map(([key, value]) => {
 
       const finalValue = typeof value === 'string' ? this.replaceValue(value, this.placeholderMap) : value.toString();
