@@ -1,5 +1,11 @@
 # syncenv
 
+## 1.2.0
+
+### Minor Changes
+
+- d57bee2: add cache feature
+
 ## 1.1.1
 
 ### Patch Changes
