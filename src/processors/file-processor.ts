@@ -12,7 +12,7 @@ export class FileProcessor extends BaseProcessor {
     super();
   }
   async process(): Promise<void> {
-    const outPath = resolveOutputPath(this.config)
+    const outPath = resolveOutputPath(this.config);
     const contents = this.replaceValue(
       this.config.placeholder,
       this.placeholderMap

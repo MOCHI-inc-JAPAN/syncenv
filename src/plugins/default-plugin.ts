@@ -5,6 +5,6 @@ export default class DefaultPlugin extends PluginInterface {
   static pluginId: "default" = "default";
 
   loadPipes(): PipeInterface[] {
-    return defaulPipes
+    return defaulPipes;
   }
 }

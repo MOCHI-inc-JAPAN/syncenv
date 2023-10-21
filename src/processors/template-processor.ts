@@ -17,7 +17,7 @@ export class TemplateProcessor extends BaseProcessor {
     const inputPath = this.config.input_path.startsWith("/")
       ? this.config.input_path
       : resolve(global.process.cwd(), this.config.input_path);
-    const outPath = resolveOutputPath(this.config)
+    const outPath = resolveOutputPath(this.config);
     const file = await readFile(inputPath);
     console.info(`${inputPath} read.`);
     const contents = this.replaceValue(file.toString(), this.placeholderMap);

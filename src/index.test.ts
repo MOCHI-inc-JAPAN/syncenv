@@ -93,7 +93,10 @@ class ConfigResolverMock extends ConfigResolver {
 }
 
 test("file test", async () => {
-  const syncenv = new Syncenv(undefined, { configParser: new ConfigParserMock(), configResolver: new ConfigResolverMock()});
+  const syncenv = new Syncenv(undefined, {
+    configParser: new ConfigParserMock(),
+    configResolver: new ConfigResolverMock(),
+  });
   await syncenv.run();
   expect(configuration).toBeTruthy();
 });
