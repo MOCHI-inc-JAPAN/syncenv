@@ -10,15 +10,25 @@ import { BaseProcessor } from "./processors/base-processor";
 import DefaultPlugin from "./plugins/default-plugin";
 import processors from "./processors";
 import { parseMatch } from "./parseSetting";
+import { resolveOutputPath } from "./pathResolver";
+import { existsSync } from "node:fs";
+
+type ParseOptionResult = {
+  exit?: boolean;
+  configPath?: string;
+  force?: boolean;
+};
 
 export class Syncenv {
   private config: Promise<SyncenvConfig>;
   private configResolver: IConfigResolver;
+  private force: boolean = false;
 
   constructor(
     params?: {
       configPath?: string;
       config?: SyncenvConfig;
+      force?: boolean;
     },
     interfaces?: {
       configParser: IConfigParser;
@@ -33,6 +43,7 @@ export class Syncenv {
       params?.config || configParser.config(params?.configPath)
     );
     this.configResolver = configResolver;
+    this.force = params?.force || false;
   }
 
   private replacerInputs(
@@ -119,9 +130,12 @@ export class Syncenv {
   private parsePipeOptionValue(value: string): [string, string[]] {
     const [_, key, args] = value.match(/(\w+)\((.*)\)/) || [];
     if (key && args) {
-      return [key, args.split(",").map((v) => {
-        return v.trim().replace(/^(['"])(.*)(['"])$/, '$2')
-      })];
+      return [
+        key,
+        args.split(",").map((v) => {
+          return v.trim().replace(/^(['"])(.*)(['"])$/, "$2");
+        }),
+      ];
     }
     return [value, []];
   }
@@ -130,11 +144,9 @@ export class Syncenv {
     return value.split("|").map((v) => v.trim());
   }
 
-  static parseOptions(...options: string[]): {
-    exit?: boolean;
-    configPath?: string;
-  } {
+  static parseOptions(...options: string[]): ParseOptionResult {
     const range = Array.from(new Array(options.length)).map((_, i) => i);
+    const finalConfig: ParseOptionResult = {};
     for (const index of range) {
       if (["-h", "--help"].includes(options[index])) {
         console.log(
@@ -150,21 +162,21 @@ export class Syncenv {
       if (["-c", "--config"].some((flag) => options[index].startsWith(flag))) {
         const parsedConfigFlag = options[index].split("=");
         if (parsedConfigFlag.length > 1) {
-          return {
-            configPath: parsedConfigFlag.pop(),
-          };
+          finalConfig["configPath"] = parsedConfigFlag.pop();
+        } else if (options[index + 1] && !options[index + 1].startsWith("-")) {
+          finalConfig["configPath"] = options[index + 1];
+        } else {
+          throw Error(
+            "-c, --config option is spcified with invalid parameters"
+          );
         }
-
-        if (options[index + 1]) {
-          return {
-            configPath: options[index + 1],
-          };
-        }
-        throw Error("-c, --config option is spcified with invalid parameters");
+      }
+      if (["-f", "--force"].includes(options[index])) {
+        finalConfig["force"] = true;
       }
     }
 
-    return {};
+    return finalConfig;
   }
 
   async run() {
@@ -173,6 +185,13 @@ export class Syncenv {
     const setting = config.setting;
     const queues: Promise<any>[] = [];
     for (const params of setting) {
+      if (config.cache && !this.force) {
+        const outPath = resolveOutputPath(params);
+        if (existsSync(outPath)) {
+          console.info(`${outPath} already exists. skip.`);
+          continue;
+        }
+      }
       const replacerInputs = this.replacerInputs(
         params.replaces,
         params.defaultReplacer
@@ -191,9 +210,9 @@ export class Syncenv {
 }
 
 function run(...options: string[]) {
-  const { configPath, exit } = Syncenv.parseOptions(...options);
+  const { configPath, exit, force } = Syncenv.parseOptions(...options);
   if (exit) return;
-  return new Syncenv({ configPath }).run();
+  return new Syncenv({ configPath, force }).run();
 }
 
 export {

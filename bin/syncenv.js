@@ -1,2 +1,2 @@
 #! /usr/bin/env node
-require('../dist/index').run(...process.argv)
+require("../dist/index").run(...process.argv);

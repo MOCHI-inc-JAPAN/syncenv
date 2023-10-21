@@ -9,31 +9,32 @@ npm i -g @tkow/syncenv
 ```
 
 ### Config Example
+
 You can write config in
 
 [
-  'package.json',
-  `.syncenvrc`,
-  `.syncenvrc.json`,
-  `.syncenvrc.yaml`,
-  `.syncenvrc.yml`,
-  `.syncenvrc.js`,
-  `syncenv.config.js`,
+'package.json',
+`.syncenvrc`,
+`.syncenvrc.json`,
+`.syncenvrc.yaml`,
+`.syncenvrc.yml`,
+`.syncenvrc.js`,
+`syncenv.config.js`,
 ]
 
 All entirely config in the file is followed by an example.
 
 ```yaml
-plugins: ['gcp']
+plugins: ["gcp"]
 setting:
-  - type: '.envrc'
+  - type: ".envrc"
     output_dir: ./artifacts
     env:
       NOT_REPLACED: NOT_REPLACED
       REPLACED: ${TO_BE_REPLACE}
     replaces:
       TO_BE_REPLACE: replaceId
-  - type: '.env'
+  - type: ".env"
     output_dir: ./artifacts
     filename: .env.dev
     env:
@@ -50,7 +51,7 @@ setting:
       PIPE_REGEXP_TEST: "PIPE_FAILED"
       PIPE_MULTIPLE_TEST: PIPE_FAILED
     pipes:
-      PIPE_TEST: 'replace(FAILED, SUCCESS)'
+      PIPE_TEST: "replace(FAILED, SUCCESS)"
       PIPE_REGEXP_TEST: 'replace(FAILED, *UCCE**) | replace(/\*/g, S)'
       PIPE_MULTIPLE_TEST: ['replace(FAILED, "SUCCESS ")', trim]
     defaultReplacer: default
@@ -98,7 +99,6 @@ replaceId gcpcall1
 
 - template-output.env
 
-
 ```txt
 NOT_REPLACED: NOT_REPLACED
 REPLACED: replaceId
@@ -130,6 +130,7 @@ The file type will generate file use placeholder value replaced by replaces obje
 The template type will generate file use read file content specified by input_path and the special syntax stings replaced by replaces object.
 
 #### env (type .env, .envrc only)
+
 Values to be written in the output file, You can specify directly `__provider:(requestId)__` for replacements.
 
 #### replaces [ Object ] < optional >
@@ -154,18 +155,18 @@ Usage:
 
 ```yaml
 # ...partial setting
-  env:
-    PIPE_TEST: $PIPE_TEST
-    PIPE_REGEXP_TEST: $PIPE_REGEXP_TEST
-    PIPE_MULTIPLE_TEST: $PIPE_MULTIPLE_TEST
-  replaces:
-    PIPE_TEST: "PIPE_FAILED"
-    PIPE_REGEXP_TEST: "PIPE_FAILED"
-    PIPE_MULTIPLE_TEST: PIPE_FAILED
-  pipes:
-    PIPE_TEST: 'replace(FAILED, SUCCESS)'
-    PIPE_REGEXP_TEST: 'replace(FAILED, *UCCE**) | replace(/\*/g, S)'
-    PIPE_MULTIPLE_TEST: ['replace(FAILED, "SUCCESS ")', trim]
+env:
+  PIPE_TEST: $PIPE_TEST
+  PIPE_REGEXP_TEST: $PIPE_REGEXP_TEST
+  PIPE_MULTIPLE_TEST: $PIPE_MULTIPLE_TEST
+replaces:
+  PIPE_TEST: "PIPE_FAILED"
+  PIPE_REGEXP_TEST: "PIPE_FAILED"
+  PIPE_MULTIPLE_TEST: PIPE_FAILED
+pipes:
+  PIPE_TEST: "replace(FAILED, SUCCESS)"
+  PIPE_REGEXP_TEST: 'replace(FAILED, *UCCE**) | replace(/\*/g, S)'
+  PIPE_MULTIPLE_TEST: ['replace(FAILED, "SUCCESS ")', trim]
 ```
 
 #### Change Replacers by each placeholder value
@@ -177,37 +178,40 @@ The defaultReplacer is used useally. However, You can change replacers by each p
 You can extend and add custom replacer and pipes to this command run process.
 Syncenv process can be extended in root's plugins property config.
 Specify install node_module's name or custom plugin class path there.
-The plugin class must be exported from `default` property, and has ether or both  `fetchValues` and `loadPipes` methods as commonjs module.
+The plugin class must be exported from `default` property, and has ether or both `fetchValues` and `loadPipes` methods as commonjs module.
 
 Example:
 
 Given if cosum-plugin.ts is followed by the code.
 
 ```ts
-import {Plugin, SyncenvConfig} from '@tkow/syncenv'
+import { Plugin, SyncenvConfig } from "@tkow/syncenv";
 
 export default class CustomPlugin extends Plugin {
   static pluginId: "custom" = "custom";
 
   constructor() {
-    super()
+    super();
   }
 
-  async fetchValues(replaces: Record<string, string>, config: SyncenvConfig): Promise<Record<string, string>> {
-    const results: Record<string, string> = {}
-    for(let [key, value] of Object.entries(replaces)) {
-      results[key] = 'pre-' + value
+  async fetchValues(
+    replaces: Record<string, string>,
+    config: SyncenvConfig
+  ): Promise<Record<string, string>> {
+    const results: Record<string, string> = {};
+    for (let [key, value] of Object.entries(replaces)) {
+      results[key] = "pre-" + value;
     }
-    return results
+    return results;
   }
 
   loadPipes() {
     return [
       {
-        pipeId: 'postfix',
-        pipe: (value, id) => value + '-' + id
-      }
-    ]
+        pipeId: "postfix",
+        pipe: (value, id) => value + "-" + id,
+      },
+    ];
   }
 }
 ```
@@ -215,16 +219,16 @@ export default class CustomPlugin extends Plugin {
 Transplie it to commonjs and locate the code custom-plugin.js. Then create the config.
 
 ```yaml
-plugins: ['./custom-plugin']
+plugins: ["./custom-plugin"]
 setting:
-  - type: '.env'
+  - type: ".env"
     output_dir: ./artifacts
     env:
       REPLACED: ${REPLACED}
     replaces:
       REPLACED: student
     pipes:
-      REPLACED: 'postfix(1)'
+      REPLACED: "postfix(1)"
     defaultReplacer: custom
 ```
 
@@ -235,7 +239,6 @@ REPLACED=pre-student-1
 ```
 
 You can see the detail in our example project.
-
 
 ## Builtin Replacer
 
@@ -248,8 +251,17 @@ plugins: ['gcp'] # you need specify gcp if you this feature.
   env:
     VALUE: $VALUE
   replaces:
-      VALUE: projects/{your projectId}/secrets/{your secret name}/versions/${your secre version number}
+    VALUE: projects/{your projectId}/secrets/{your secret name}/versions/${your secre version number}
 ```
 
 Before runnin comand, you must login by 'gcloud auth application-default login' or set a credencial path to GOOGLE_APPLICATION_CREDENTIALS and satisfy your account have privilege of the secret manager access.
 See the detail in https://cloud.google.com/docs/authentication/getting-started.
+
+## Cache Mode
+
+As default, synenv doesn't fetch and generate files when output files exist. If you want to change this behavior, set `cache: false` option and synenv will always run fetch and generate files prossess. Even if you set `cache: true` (or keep the default), you can force to make this process run with flag `-f or --force`.
+
+```yaml
+cache: false
+...(other configs)
+```

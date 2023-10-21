@@ -7,7 +7,10 @@ export interface PluginInterfaceConstructor {
 
 export interface PipeInterface {
   pipeId: string;
-  pipe(value: string | number | boolean, ...args: any[]): string | number | boolean
+  pipe(
+    value: string | number | boolean,
+    ...args: any[]
+  ): string | number | boolean;
 }
 
 export abstract class PluginInterface {

@@ -1,13 +1,13 @@
-plugins: ['gcp']
+plugins: ["gcp"]
 setting:
-  - type: '.envrc'
+  - type: ".envrc"
     output_dir: ./artifacts
     env:
       NOT_REPLACED: NOT_REPLACED
       REPLACED: ${TO_BE_REPLACE}
     replaces:
       TO_BE_REPLACE: replaceId
-  - type: '.env'
+  - type: ".env"
     output_dir: ./artifacts
     filename: .env.dev
     env:
@@ -24,7 +24,7 @@ setting:
       PIPE_REGEXP_TEST: "PIPE_FAILED"
       PIPE_MULTIPLE_TEST: PIPE_FAILED
     pipes:
-      PIPE_TEST: 'replace(FAILED, SUCCESS)'
+      PIPE_TEST: "replace(FAILED, SUCCESS)"
       PIPE_REGEXP_TEST: 'replace(FAILED, *UCCE**) | replace(/\*/g, S)'
       PIPE_MULTIPLE_TEST: ['replace(FAILED, "SUCCESS ")', trim]
     defaultReplacer: default

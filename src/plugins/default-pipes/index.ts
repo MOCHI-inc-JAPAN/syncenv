@@ -12,10 +12,10 @@ export const replacePipe: PipeInterface = {
       matcher = new RegExp(matchedRegExp[1], matchedRegExp[2]);
     }
     const finalValue = current.replace(matcher, replaced);
-    if(finalValue === current) {
-      console.warn(`No effect ${match} in replace filter.`)
+    if (finalValue === current) {
+      console.warn(`No effect ${match} in replace filter.`);
     }
-    return finalValue
+    return finalValue;
   },
 };
 
@@ -26,5 +26,4 @@ export const trimPipe: PipeInterface = {
   },
 };
 
-
-export const defaulPipes = [replacePipe, trimPipe]
+export const defaulPipes = [replacePipe, trimPipe];

@@ -2,6 +2,7 @@ import { resolve } from "node:path";
 import { writeFile } from "../writeFile";
 import { FileType, SyncenvConfigObject } from "../config-parser";
 import { BaseProcessor } from "./base-processor";
+import { resolveOutputPath } from "../pathResolver";
 
 export class FileProcessor extends BaseProcessor {
   constructor(
@@ -11,9 +12,7 @@ export class FileProcessor extends BaseProcessor {
     super();
   }
   async process(): Promise<void> {
-    const outPath = this.config.output_path.startsWith("/")
-      ? this.config.output_path
-      : resolve(global.process.cwd(), this.config.output_path);
+    const outPath = resolveOutputPath(this.config);
     const contents = this.replaceValue(
       this.config.placeholder,
       this.placeholderMap

@@ -1,6 +1,6 @@
-plugins: ['./custom-gcp', './custom-plugins/custom-plugin', '@tkow/npm-plugin']
+plugins: ["./custom-gcp", "./custom-plugins/custom-plugin", "@tkow/npm-plugin"]
 setting:
-  - type: '.envrc'
+  - type: ".envrc"
     output_dir: ./artifacts
     env:
       BOOLEAN_TEST: true
@@ -13,12 +13,12 @@ setting:
     replaces:
       DOUBLE_QUATE_TEST: 'double "quate test'
       TO_BE_REPLACE: replaceId
-      PLUGIN_TEST: '__custom:test__'
-      PLUGIN_NPM_TEST: '__npm:test__'
+      PLUGIN_TEST: "__custom:test__"
+      PLUGIN_NPM_TEST: "__npm:test__"
     pipes:
-      PLUGIN_TEST: 'postfix(1)'
-      PLUGIN_NPM_TEST: 'npm-postfix'
-  - type: '.env'
+      PLUGIN_TEST: "postfix(1)"
+      PLUGIN_NPM_TEST: "npm-postfix"
+  - type: ".env"
     output_dir: ./artifacts
     filename: .env.dev
     quate: "'"
@@ -45,7 +45,7 @@ setting:
       TO_BE_REPLACE: replaceId
       TO_BE_REPLACE_PROVIDER: __gcp:replaceId__
     pipes:
-      PIPE_TEST: 'replace(FAILED, SUCCESS)'
+      PIPE_TEST: "replace(FAILED, SUCCESS)"
       PIPE_REGEXP_TEST: 'replace(FAILED, *UCCE**) | replace(/\*/g, S)'
       PIPE_MULTIPLE_TEST: ['replace(FAILED, "SUCCESS ")', trim]
     defaultReplacer: default

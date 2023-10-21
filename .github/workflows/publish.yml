@@ -6,7 +6,7 @@ name: push events
 on:
   push:
     branches:
-      - 'main'
+      - "main"
 
 jobs:
   publish-npm:
@@ -35,8 +35,8 @@ jobs:
       - name: create and publish versions
         uses: changesets/action@v1
         with:
-          commit: 'chore: update versions'
-          title: 'chore: update versions'
+          commit: "chore: update versions"
+          title: "chore: update versions"
           publish: npm publish --access public
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

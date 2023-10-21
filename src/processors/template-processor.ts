@@ -3,6 +3,7 @@ import { writeFile } from "../writeFile";
 import { resolve } from "node:path";
 import { SyncenvConfigObject, TemplateType } from "../config-parser";
 import { BaseProcessor } from "./base-processor";
+import { resolveOutputPath } from "../pathResolver";
 
 export class TemplateProcessor extends BaseProcessor {
   constructor(
@@ -16,9 +17,7 @@ export class TemplateProcessor extends BaseProcessor {
     const inputPath = this.config.input_path.startsWith("/")
       ? this.config.input_path
       : resolve(global.process.cwd(), this.config.input_path);
-    const outPath = this.config.input_path.startsWith("/")
-      ? this.config.output_path
-      : resolve(global.process.cwd(), this.config.output_path);
+    const outPath = resolveOutputPath(this.config);
     const file = await readFile(inputPath);
     console.info(`${inputPath} read.`);
     const contents = this.replaceValue(file.toString(), this.placeholderMap);
