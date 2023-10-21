@@ -253,3 +253,12 @@ plugins: ['gcp'] # you need specify gcp if you this feature.
 
 Before runnin comand, you must login by 'gcloud auth application-default login' or set a credencial path to GOOGLE_APPLICATION_CREDENTIALS and satisfy your account have privilege of the secret manager access.
 See the detail in https://cloud.google.com/docs/authentication/getting-started.
+
+## Cache Mode
+
+As default, synenv doesn't fetch and generate files when output files exist. If you want to change this behavior, set `cache: false` option and synenv will always run fetch and generate files prossess. Even if you set `cache: true` (or  keep the default), you can force to make this process run with flag `-f or --force`.
+
+```yaml
+cache: false
+...(other configs)
+```
