@@ -11,6 +11,7 @@ import {
   boolean,
   number,
   coerce,
+  transform,
   Output,
 } from "valibot";
 import { resolve } from "node:path";
@@ -48,9 +49,17 @@ const SyncenvConfigObjectSchema = union([
   object({
     type: literal("file"),
     output_path: string(),
-    placeholder: string(),
-    replaces: optional(ReplacesSchema),
-    pipes: optional(PipeSchema),
+    placeholder: optional(string()),
+    replaces: transform(optional(union([ReplacesSchema, string()])), (val) =>
+      typeof val === "string" ? { "@@content": val } : val
+    ),
+    pipes: transform(
+      optional(union([PipeSchema, string(), array(string())])),
+      (val) =>
+        typeof val === "string" || Array.isArray(val)
+          ? { "@@content": val }
+          : val
+    ),
     defaultReducer: optional(string()),
   }),
   object({
@@ -93,7 +102,7 @@ type EnvObject<Replacer> = {
 type FileObject<Replacer> = {
   type: FileType;
   output_path: string;
-  placeholder: string;
+  placeholder?: string;
   replaces?: ReplacerValue;
   pipes?: PipeOptions;
   defaultReplacer?: Replacer;
@@ -139,6 +148,12 @@ function isEnvType<Replacer>(
   return value.type === ".env" || value.type === ".envrc";
 }
 
+function isFileType<Replacer>(
+  value: SyncenvConfigObject<Replacer>
+): value is FileObject<Replacer> {
+  return value.type === "file";
+}
+
 export class ConfigParser {
   constructor() {}
   async config(configPath?: string): Promise<SyncenvConfig> {
@@ -170,6 +185,18 @@ export class ConfigParser {
     validConfig.setting = validConfig.setting.map((v) => {
       if (!v.defaultReplacer && validConfig.defaultReplacer) {
         v.defaultReplacer = validConfig.defaultReplacer;
+      }
+      if (isFileType(v)) {
+        if (!v.placeholder && v.replaces && !v.replaces["@@content"]) {
+          throw new Error(
+            `The replaces property must be string without placeholder.`
+          );
+        }
+        if (!v.placeholder && v.pipes && !v.pipes["@@content"]) {
+          throw new Error(
+            `The pipes property must be string or string[] without placeholder.`
+          );
+        }
       }
       if (isEnvType(v)) {
         for (const [key, value] of Object.entries(v.env)) {
