@@ -1,25 +1,24 @@
-import { SyncenvConfig } from "./config-parser";
-import {
-  PipeInterface,
-  PluginInterface,
-  PluginInterfaceConstructor,
-} from "./plugins/plugin-interface";
-import GcpSecretPlugin from "./plugins/gcp-secret-plugin";
-import DefaultPlugin from "./plugins/default-plugin";
-import { resolve as resolvePath } from "node:path";
-import { createReadStream, createWriteStream } from "node:fs";
-import { mkdir, stat } from "node:fs/promises";
-import { resolveOutputPath } from "./pathResolver";
-import { t as tart, Pack } from "tar";
 import concat from "concat-stream";
+import { createReadStream, createWriteStream } from "node:fs";
+import { mkdir, stat, writeFile, readFile} from "node:fs/promises";
+import { resolve as resolvePath } from "node:path";
+import { Pack, t as tart } from "tar";
+import { resolveAbsolutePath, resolveOutputPath } from "./pathResolver";
+import {randomBytes, createCipheriv, createDecipheriv} from "crypto";
 
 const CACHE_KEY_FILE_NAME = "cache-key.json";
-const CACHE_FILE_NAME = "synenv-cache.tar.gz";
+const CACHE_FILE_NAME = "synenv-cache.data";
+
+type SecrectKey = {
+  algorithm: string
+  key: Buffer
+  iv: Buffer
+}
 
 export class CacheResolver {
-  cacheKeyPaths: Record<string, string> | undefined;
   cacheFiles: Promise<Record<string, Buffer>> | undefined;
   private cacheGzipPack: Pack;
+  private secretKey: SecrectKey | undefined;
 
   constructor() {
     this.cacheGzipPack = new Pack({
@@ -32,16 +31,19 @@ export class CacheResolver {
     outputPath: string,
     options?: { cacheKeyPath?: string }
   ): Promise<[outPath: string | undefined, contents: Buffer | undefined]> {
-    const cacheDirExists = (await stat(cacheDir)).isDirectory();
-    if (!cacheDirExists) {
+    const stats = await stat(cacheDir);
+    if (!stats.isDirectory()) {
       return [undefined, undefined];
     }
 
     if (!this.cacheFiles) {
+      const secretKey = await this.genOrReadSecretKey(cacheDir, options)
+      const decipher = createDecipheriv(secretKey.algorithm, secretKey.key, secretKey.iv);
       this.cacheFiles = new Promise((resolve, reject) => {
         const pipePromises: Promise<[string, Buffer]>[] = [];
         createReadStream(resolvePath(cacheDir, CACHE_FILE_NAME))
           .pipe(tart())
+          .pipe(decipher)
           .on("entry", (entry) => {
             const task = new Promise<[string, Buffer]>((resolve, reject) => {
               if (entry.type === "File") {
@@ -60,7 +62,7 @@ export class CacheResolver {
       });
     }
 
-    return this.resolveCacheKeyPath(cacheDir, outputPath);
+    return this.resolveCacheKeyPath(outputPath);
   }
 
   async storeCache(
@@ -73,27 +75,25 @@ export class CacheResolver {
       await mkdir(cacheDir, { recursive: true });
     }
 
-    this.cacheGzipPack.add(
-      this.restoreFileKey(outputPath)
-    ).pipe(
+    // this.cacheGzipPack.add(
+    //   this.fileKey(outputPath)
+    // ).pipe(
 
 
-    )
+    // )
 
-    entry(
-      { name: this.restoreFileKey(outputPath) },
-      contents
-    );
-    resolveOutputPath(arg);
-    return this.plugins;
+    // entry(
+    //   { name: this.fileKey(outputPath) },
+    //   contents
+    // );
+    // resolveOutputPath(arg);
+    // return this.plugins;
   }
 
   async archiveCacheFile(
     cacheDir: string,
-    outputPath: string,
-    contents: string | ArrayBufferLike,
     options?: { cacheKeyPath?: string }
-  ): Promise<[outPath: string, contents: string | ArrayBufferLike]> {
+  ): Promise<void> {
     const cacheDirExists = (await stat(cacheDir)).isDirectory();
     if (!cacheDirExists) {
       await mkdir(cacheDir, { recursive: true });
@@ -101,27 +101,59 @@ export class CacheResolver {
     const archivePath = createWriteStream(
       resolvePath(cacheDir, CACHE_FILE_NAME)
     );
-    this.cacheGzipPack.pipe(gstream).pipe;
-    resolveOutputPath(arg);
-    return this.plugins;
+
+    const secretKey = await this.genOrReadSecretKey(cacheDir, options)
+    const cipher = createCipheriv(secretKey.algorithm, secretKey.key, secretKey.iv);
+    return new Promise((resolve, _)=> {
+      this.cacheGzipPack.pipe(archivePath).pipe(cipher).on("finish", () => {
+        resolve()
+      })
+    })
   }
 
-  private restoreFileKey(outputPath: string) {
+  private async genOrReadSecretKey(cacheDir: string, options?: {cacheKeyPath?: string}): Promise<SecrectKey> {
+    if(this.secretKey) return this.secretKey
+    const cacheKeyPath: string = this.cacheKeyFilePath(cacheDir, options)
+    const stats = await stat(cacheKeyPath)
+    if(!stats.isFile()) {
+      const algorithm = "aes-256-cbc";
+      const key = randomBytes(32)
+      const iv = randomBytes(16)
+      this.secretKey = { algorithm, key, iv }
+      await writeFile(cacheKeyPath, JSON.stringify({
+        algorithm: this.secretKey.algorithm,
+        key: this.secretKey.key.toString("hex"),
+        iv: this.secretKey.iv.toString("hex"),
+      }, null, 2))
+      return this.secretKey
+    }
+    this.secretKey = await readFile(cacheKeyPath)
+      .then((data) => JSON.parse(data.toString()))
+      .then((data) => {
+        return {
+          algorithm: data.algorithm,
+          key: Buffer.from(data.key, "hex"),
+          iv: Buffer.from(data.iv, "hex"),
+        }
+      })
+    return this.secretKey!
+  }
+
+  private fileKey(outputPath: string) {
     return outputPath.replaceAll("/", "-").replaceAll(".", "-dot-");
   }
 
+  private cacheKeyFilePath(cacheDir: string, options?: {cacheKeyPath?: string}) {
+    return options?.cacheKeyPath ? resolveAbsolutePath(options.cacheKeyPath) : resolvePath(cacheDir, CACHE_KEY_FILE_NAME)
+  }
+
   private async resolveCacheKeyPath(
-    cacheDir: string,
     outputPath: string
   ): Promise<[outPath: string | undefined, contents: Buffer | undefined]> {
-    if (!this.cacheKeyPaths) {
-      this.cacheKeyPaths = await import(
-        resolvePath(cacheDir, CACHE_KEY_FILE_NAME)
-      );
-    }
     const cacheFiles = await this.cacheFiles;
-    if (cacheFiles) {
-      return [outputPath, cacheFiles[this.cacheKeyPaths![outputPath]]];
+    const cacheKey = this.fileKey(outputPath)
+    if (cacheFiles && cacheKey) {
+      return [outputPath, cacheFiles[cacheKey]];
     }
     return [undefined, undefined];
   }

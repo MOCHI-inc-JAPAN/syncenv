@@ -14,6 +14,10 @@ export const resolveOutputPath = (config: ConfigObject) => {
       (config as DirFileConfig).filename || (config as DirFileConfig).type!
     );
 
+  return resolveAbsolutePath(outputPath)
+};
+
+export const resolveAbsolutePath = (outputPath: string) => {
   return outputPath.startsWith("/")
     ? outputPath
     : resolve(global.process.cwd(), outputPath);
