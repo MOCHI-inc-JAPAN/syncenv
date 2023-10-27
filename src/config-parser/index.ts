@@ -15,6 +15,7 @@ import {
   Output,
 } from "valibot";
 import { resolve } from "node:path";
+import { homedir } from "node:os";
 import { parseMatch } from "../parseSetting";
 
 export type ProviderType = "gcp";
@@ -77,7 +78,20 @@ const SyncenvConfigSchema = object({
   defaultReplacer: optional(string()),
   plugins: optional(array(string())),
   setting: union([SyncenvConfigObjectSchema, array(SyncenvConfigObjectSchema)]),
-  cache: coerce(boolean(), (val) => (typeof val === "boolean" ? val : true)),
+  cache: transform(
+    optional(
+      union(
+        [boolean(), string()]
+      )
+    ),
+    (val) => {
+      if(!val) {
+        return undefined
+      } else {
+        return val === true ? resolve(homedir(), '.syncenv') : val
+      }
+    }
+  )
 });
 
 export type EnvType = ".env" | ".envrc";
@@ -129,7 +143,7 @@ type SyncenvConfigInternal<
   replaces?: ReplacerValue;
   defaultReplacer?: DefaultPlugin;
   plugins?: string[];
-  cache?: boolean;
+  cache?: string;
   setting: Setting;
 };
 

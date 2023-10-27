@@ -1,5 +1,6 @@
-import { resolve, join } from "node:path";
+import { resolve, join, dirname } from "node:path";
 import { SyncenvConfigObject } from "./config-parser";
+
 
 type ConfigObject = SyncenvConfigObject<any>;
 type OutputConfig = Extract<ConfigObject, { output_path: any }>;

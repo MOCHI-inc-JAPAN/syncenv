@@ -12,6 +12,7 @@ import processors from "./processors";
 import { parseMatch } from "./parseSetting";
 import { resolveOutputPath } from "./pathResolver";
 import { existsSync } from "node:fs";
+import { CacheResolver } from "./cache-resolver";
 
 type ParseOptionResult = {
   exit?: boolean;
@@ -22,6 +23,7 @@ type ParseOptionResult = {
 export class Syncenv {
   private config: Promise<SyncenvConfig>;
   private configResolver: IConfigResolver;
+  private cacheResolver: CacheResolver;
   private force: boolean = false;
 
   constructor(
@@ -33,16 +35,19 @@ export class Syncenv {
     interfaces?: {
       configParser: IConfigParser;
       configResolver: IConfigResolver;
+      cacheResolver: CacheResolver;
     }
   ) {
     const {
       configParser = new ConfigParser(),
       configResolver = new ConfigResolver(),
+      cacheResolver = new CacheResolver(),
     } = interfaces || {};
     this.config = Promise.resolve(
       params?.config || configParser.config(params?.configPath)
     );
     this.configResolver = configResolver;
+    this.cacheResolver = cacheResolver;
     this.force = params?.force || false;
   }
 
@@ -186,9 +191,11 @@ export class Syncenv {
     const queues: Promise<any>[] = [];
     for (const params of setting) {
       if (config.cache && !this.force) {
-        const outPath = resolveOutputPath(params);
-        if (existsSync(outPath)) {
-          console.info(`${outPath} already exists. skip.`);
+        const [outPath, contents] = this.cacheResolver.resolveCache(
+          config.cache, resolveOutputPath(params)
+        );
+        if (outPath && contents) {
+          console.info(`${outPath} cache.`);
           continue;
         }
       }
