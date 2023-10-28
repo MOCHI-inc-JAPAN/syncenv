@@ -1,9 +1,9 @@
 import concat from "concat-stream";
 import { createReadStream, createWriteStream } from "node:fs";
-import { mkdir, stat, writeFile, readFile } from "node:fs/promises";
+import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { resolve as resolvePath } from "node:path";
 import { Pack, t as tart } from "tar";
-import { resolveAbsolutePath } from "./pathResolver";
+import { isDirectory, isFile, resolveAbsolutePath } from "./pathResolver";
 import { randomBytes, createCipheriv, createDecipheriv } from "crypto";
 import { homedir } from "os";
 
@@ -40,8 +40,8 @@ export class CacheResolver {
     options?: { cacheKeyPath?: string }
   ): Promise<[outPath: string | undefined, contents: Buffer | undefined]> {
     const cacheDir = this.config.cacheDir
-    const stats = await stat(cacheDir);
-    if (!stats.isDirectory()) {
+    const isDir = isDirectory(cacheDir)
+    if (!isDir) {
       return [undefined, undefined];
     }
 
@@ -83,8 +83,8 @@ export class CacheResolver {
     contents: string | ArrayBufferLike | Buffer
   ): Promise<void> {
     const cacheDir = this.config.cacheDir
-    const cacheDirExists = (await stat(cacheDir)).isDirectory();
-    if (!cacheDirExists) {
+    const isDir = isDirectory(cacheDir)
+    if (!isDir) {
       await mkdir(cacheDir, { recursive: true });
     }
 
@@ -97,7 +97,7 @@ export class CacheResolver {
     options?: { cacheKeyPath?: string }
   ): Promise<void> {
     const cacheDir = this.config.cacheDir
-    const cacheDirExists = (await stat(cacheDir)).isDirectory();
+    const cacheDirExists = await isDirectory(cacheDir);
     if (!cacheDirExists) {
       await mkdir(cacheDir, { recursive: true });
     }
@@ -127,8 +127,8 @@ export class CacheResolver {
   ): Promise<SecrectKey> {
     if (this.secretKey) return this.secretKey;
     const cacheKeyPath: string = this.cacheKeyFilePath(cacheDir, options);
-    const stats = await stat(cacheKeyPath);
-    if (!stats.isFile()) {
+    const isfile = await isFile(cacheKeyPath);
+    if (!isfile) {
       const algorithm = "aes-256-cbc";
       const key = randomBytes(32);
       const iv = randomBytes(16);
