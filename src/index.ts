@@ -11,8 +11,8 @@ import DefaultPlugin from "./plugins/default-plugin";
 import processors from "./processors";
 import { parseMatch } from "./parseSetting";
 import { resolveOutputPath } from "./pathResolver";
-import { existsSync } from "node:fs";
 import { CacheResolver } from "./cache-resolver";
+import { writeFile } from "./writeFile";
 
 type ParseOptionResult = {
   exit?: boolean;
@@ -33,9 +33,9 @@ export class Syncenv {
       force?: boolean;
     },
     interfaces?: {
-      configParser: IConfigParser;
-      configResolver: IConfigResolver;
-      cacheResolver: CacheResolver;
+      configParser?: IConfigParser;
+      configResolver?: IConfigResolver;
+      cacheResolver?: CacheResolver;
     }
   ) {
     const {
@@ -189,13 +189,18 @@ export class Syncenv {
     const replacers = await this.configResolver.resolvePlugins(config);
     const setting = config.setting;
     const queues: Promise<any>[] = [];
+    if (config.cache) {
+      this.cacheResolver.setCacheDir(config.cache)
+    }
     for (const params of setting) {
       if (config.cache && !this.force) {
-        const [outPath, contents] = this.cacheResolver.resolveCache(
-          config.cache, resolveOutputPath(params)
+        const [outPath, contents] = await this.cacheResolver.restoreCache(
+          resolveOutputPath(params),
+          config
         );
         if (outPath && contents) {
-          console.info(`${outPath} cache.`);
+          writeFile(outPath, contents)
+          console.info(`${outPath} has used cache.`);
           continue;
         }
       }
@@ -209,10 +214,13 @@ export class Syncenv {
         params.pipes
       );
       const processorClass = processors[params.type];
-      const processor = new processorClass(placeholderMapping, params);
+      const processor = new processorClass(placeholderMapping, params, this.cacheResolver);
       queues.push(processor.process());
     }
     await Promise.all(queues);
+    if (config.cache) {
+      this.cacheResolver.archiveCacheFile(config)
+    }
   }
 }
 

@@ -3,7 +3,7 @@ import { dirname } from "node:path";
 
 export async function writeFile(
   outPath: string,
-  contents: string | ArrayBufferLike
+  contents: string | ArrayBufferLike | Buffer
 ) {
   await mkdir(dirname(outPath), { recursive: true });
   return fsWriteFile(outPath, contents);

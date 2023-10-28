@@ -1,25 +1,26 @@
 import { cosmiconfig } from "cosmiconfig";
+import { resolve } from "node:path";
 import {
-  record,
-  object,
-  union,
-  string,
-  literal,
-  optional,
-  parse,
+  Output,
   array,
   boolean,
-  number,
   coerce,
+  literal,
+  number,
+  object,
+  optional,
+  parse,
+  record,
+  string,
   transform,
-  Output,
+  union,
 } from "valibot";
-import { resolve } from "node:path";
-import { homedir } from "node:os";
+import { DEFAULT_CACHE_DIR, DEFAULT_CACHE_KEY_PATH } from "../cache-resolver";
 import { parseMatch } from "../parseSetting";
 
 export type ProviderType = "gcp";
 export type Placeholder = `$\{${string}\}` | `$${string}`;
+
 export type ReplacerTemplate = `__${ProviderType}:${string}__`;
 
 type EnvValue = {
@@ -88,7 +89,19 @@ const SyncenvConfigSchema = object({
       if(!val) {
         return undefined
       } else {
-        return val === true ? resolve(homedir(), '.syncenv') : val
+        return val === true ? DEFAULT_CACHE_DIR : val
+      }
+    }
+  ),
+  cacheKeyPath: transform(
+    optional(
+      string()
+    ),
+    (val) => {
+      if(!val) {
+        return undefined
+      } else {
+        return val ? DEFAULT_CACHE_KEY_PATH : val
       }
     }
   )
@@ -144,6 +157,7 @@ type SyncenvConfigInternal<
   defaultReplacer?: DefaultPlugin;
   plugins?: string[];
   cache?: string;
+  cacheKeyPath: string
   setting: Setting;
 };
 

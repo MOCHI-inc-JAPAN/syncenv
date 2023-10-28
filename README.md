@@ -259,7 +259,7 @@ See the detail in https://cloud.google.com/docs/authentication/getting-started.
 
 ## Cache Mode
 
-As default, synenv doesn't fetch and generate files when output files exist. If you want to change this behavior, set `cache: false` option and synenv will always run fetch and generate files prossess. Even if you set `cache: true` (or keep the default), you can force to make this process run with flag `-f or --force`.
+As default, synenv always fetch and generate files when output files exist. Sometimes, this may annoy you when using pricing sttorage. If you want to change this behavior, set `cache: true` option and synenv will use cache files to genrate them when it is available and doesn't run provider actions. Even if you set `cache: true`, you can ignore cache  files with flag `-f or --force`.
 
 ```yaml
 cache: false
