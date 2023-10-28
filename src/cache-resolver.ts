@@ -1,10 +1,11 @@
 import concat from "concat-stream";
 import { createReadStream, createWriteStream } from "node:fs";
-import { mkdir, writeFile, readFile } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 import { resolve as resolvePath } from "node:path";
 import { Pack, t as tart } from "tar";
 import { isDirectory, isFile, resolveAbsolutePath } from "./pathResolver";
 import { randomBytes, createCipheriv, createDecipheriv } from "crypto";
+import { writeFile } from "./writeFile";
 import { homedir } from "os";
 
 const CACHE_KEY_FILE_NAME = "cache-key.json";
@@ -53,9 +54,15 @@ export class CacheResolver {
         secretKey.key,
         secretKey.iv
       );
-      this.cacheFiles = new Promise((resolve, reject) => {
+      this.cacheFiles = new Promise(async (resolve, reject) => {
         const pipePromises: Promise<[string, Buffer]>[] = [];
-        createReadStream(resolvePath(cacheDir, CACHE_FILE_NAME))
+        const cacheFilePath = resolvePath(cacheDir, CACHE_FILE_NAME)
+        const isfile = await isFile(cacheFilePath)
+        if(!isfile) {
+          resolve(Object.fromEntries(await Promise.all(pipePromises)))
+          return
+        }
+        createReadStream(cacheFilePath)
           .pipe(tart())
           .pipe(decipher)
           .on("entry", (entry) => {
@@ -89,9 +96,12 @@ export class CacheResolver {
       await mkdir(cacheDir, { recursive: true });
     }
 
-    const pack = this.cacheGzipPack.add(this.fileKey(outputPath));
+    const pack = this.cacheGzipPack.add(this.fileKey(outputPath)).on("error",(e)=>{
+      console.log(e)
+    });
 
     pack.write(contents);
+
   }
 
   async archiveCacheFile(
@@ -102,7 +112,8 @@ export class CacheResolver {
     if (!cacheDirExists) {
       await mkdir(cacheDir, { recursive: true });
     }
-    const archivePath = createWriteStream(
+
+    const archiveFileWriteStream = createWriteStream(
       resolvePath(cacheDir, CACHE_FILE_NAME)
     );
 
@@ -114,9 +125,13 @@ export class CacheResolver {
     );
     return new Promise((resolve, _) => {
       this.cacheGzipPack
-        .pipe(archivePath)
         .pipe(cipher)
+        .pipe(archiveFileWriteStream)
+        .on("error",()=>{
+          console.log('test')
+        })
         .on("finish", () => {
+          console.log('finish')
           resolve();
         });
     });

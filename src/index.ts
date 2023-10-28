@@ -219,7 +219,7 @@ export class Syncenv {
     }
     await Promise.all(queues);
     if (config.cache) {
-      this.cacheResolver.archiveCacheFile(config)
+      await this.cacheResolver.archiveCacheFile(config)
     }
   }
 }

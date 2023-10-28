@@ -1,5 +1,4 @@
 import { readFile } from "node:fs/promises";
-import { writeFile } from "../writeFile";
 import { resolve } from "node:path";
 import { SyncenvConfigObject, TemplateType } from "../config-parser";
 import { BaseProcessor } from "./base-processor";
@@ -23,7 +22,7 @@ export class TemplateProcessor extends BaseProcessor {
     const file = await readFile(inputPath);
     console.info(`${inputPath} read.`);
     const contents = this.replaceValue(file.toString(), this.placeholderMap);
-    return writeFile(outPath, contents).then(() => {
+    return this.writeFile(outPath, contents).then(() => {
       console.info(`${outPath} created.`);
     });
   }
