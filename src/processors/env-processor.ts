@@ -29,7 +29,7 @@ export class EnvProcessor extends BaseProcessor {
         return text;
       }
     });
-    return this.writeFile(this.cacheResolver.config.cacheDir,outPath, contents.join(EOL)).then(() => {
+    return this.writeFile(outPath, contents.join(EOL)).then(() => {
       console.info(`${outPath} created.`);
     });
   }

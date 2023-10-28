@@ -53,7 +53,7 @@ export class Syncenv {
 
   private replacerInputs(
     replaces: Record<string, string | number | boolean> | undefined,
-    defaultReplacerKey: string = DefaultPlugin.pluginId
+    default_replacerKey: string = DefaultPlugin.pluginId
   ): Record<string, Record<string, string | number | boolean>> {
     const replacersMap: Record<
       string,
@@ -70,7 +70,7 @@ export class Syncenv {
         replacersMapValue[key] = requestId;
         replacersMap[replacerKey] = replacersMapValue;
       } else {
-        const replacerKey = defaultReplacerKey;
+        const replacerKey = default_replacerKey;
         const replacersMapValue = replacersMap[replacerKey] || {};
         replacersMapValue[key] = value;
         replacersMap[replacerKey] = replacersMapValue;
@@ -206,7 +206,7 @@ export class Syncenv {
       }
       const replacerInputs = this.replacerInputs(
         params.replaces,
-        params.defaultReplacer
+        params.default_replacer
       );
       const placeholderMapping = await this.createPlaceholderMap(
         replacers,

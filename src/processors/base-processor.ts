@@ -33,7 +33,6 @@ export abstract class BaseProcessor {
   }
 
   protected async writeFile(
-    cacheDir: string,
     outputPath: string,
     contents: Buffer | string
   ) {

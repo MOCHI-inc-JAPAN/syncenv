@@ -48,18 +48,18 @@ setting:
       PIPE_TEST: "replace(FAILED, SUCCESS)"
       PIPE_REGEXP_TEST: 'replace(FAILED, *UCCE**) | replace(/\*/g, S)'
       PIPE_MULTIPLE_TEST: ['replace(FAILED, "SUCCESS ")', trim]
-    defaultReplacer: default
+    default_replacer: default
   - type: file
     output_path: ./artifacts/file-output.txt
     placeholder: $TO_BE_REPLACE $TO_BE_REPLACE_PROVIDER
     replaces:
       TO_BE_REPLACE: replaceId
       TO_BE_REPLACE_PROVIDER: __gcp:replaceId__
-    defaultReplacer?: default
+    default_replacer?: default
   - type: template
     input_path: ./.env.template
     output_path: ./artifacts/template-output.env
     replaces:
       TO_BE_REPLACE: replaceId
       TO_BE_REPLACE_PROVIDER: __gcp:replaceId__
-    defaultReplacer?: default
+    default_replacer?: default

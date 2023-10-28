@@ -46,7 +46,7 @@ const SyncenvConfigObjectSchema = union([
     replaces: optional(ReplacesSchema),
     pipes: optional(PipeSchema),
     quate: coerce(string(), (val) => (val as string) ?? '"'),
-    defaultReducer: optional(string()),
+    default_replacer: optional(string()),
   }),
   object({
     type: literal("file"),
@@ -62,7 +62,7 @@ const SyncenvConfigObjectSchema = union([
           ? { "@@content": val }
           : val
     ),
-    defaultReducer: optional(string()),
+    default_replacer: optional(string()),
   }),
   object({
     type: literal("template"),
@@ -70,13 +70,13 @@ const SyncenvConfigObjectSchema = union([
     output_path: string(),
     replaces: optional(ReplacesSchema),
     pipes: optional(PipeSchema),
-    defaultReducer: optional(string()),
+    default_replacer: optional(string()),
   }),
 ]);
 
 const SyncenvConfigSchema = object({
   replaces: optional(ReplacesSchema),
-  defaultReplacer: optional(string()),
+  default_replacer: optional(string()),
   plugins: optional(array(string())),
   setting: union([SyncenvConfigObjectSchema, array(SyncenvConfigObjectSchema)]),
   cache: transform(
@@ -93,7 +93,7 @@ const SyncenvConfigSchema = object({
       }
     }
   ),
-  cacheKeyPath: transform(
+  cache_key_path: transform(
     optional(
       string()
     ),
@@ -101,7 +101,7 @@ const SyncenvConfigSchema = object({
       if(!val) {
         return undefined
       } else {
-        return val ? DEFAULT_CACHE_KEY_PATH : val
+        return  val || DEFAULT_CACHE_KEY_PATH
       }
     }
   )
@@ -123,7 +123,7 @@ type EnvObject<Replacer> = {
   quate: string;
   replaces?: ReplacerValue;
   pipes?: PipeOptions;
-  defaultReplacer?: Replacer;
+  default_replacer?: Replacer;
 };
 
 type FileObject<Replacer> = {
@@ -132,7 +132,7 @@ type FileObject<Replacer> = {
   placeholder?: string;
   replaces?: ReplacerValue;
   pipes?: PipeOptions;
-  defaultReplacer?: Replacer;
+  default_replacer?: Replacer;
 };
 
 type TemplateObject<Replacer> = {
@@ -141,7 +141,7 @@ type TemplateObject<Replacer> = {
   output_path: string;
   replaces?: ReplacerValue;
   pipes?: PipeOptions;
-  defaultReplacer?: Replacer;
+  default_replacer?: Replacer;
 };
 
 export type SyncenvConfigObject<Replacer> =
@@ -154,10 +154,10 @@ type SyncenvConfigInternal<
   DefaultPlugin = string
 > = {
   replaces?: ReplacerValue;
-  defaultReplacer?: DefaultPlugin;
+  default_replacer?: DefaultPlugin;
   plugins?: string[];
   cache?: string;
-  cacheKeyPath: string
+  cache_key_path: string
   setting: Setting;
 };
 
@@ -211,8 +211,8 @@ export class ConfigParser {
     }
 
     validConfig.setting = validConfig.setting.map((v) => {
-      if (!v.defaultReplacer && validConfig.defaultReplacer) {
-        v.defaultReplacer = validConfig.defaultReplacer;
+      if (!v.default_replacer && validConfig.default_replacer) {
+        v.default_replacer = validConfig.default_replacer;
       }
       if (isFileType(v)) {
         if (!v.placeholder && v.replaces && !v.replaces["@@content"]) {

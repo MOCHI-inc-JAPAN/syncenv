@@ -37,11 +37,12 @@ export class CacheResolver {
 
   async restoreCache(
     outputPath: string,
-    options?: { cacheKeyPath?: string }
+    options?: { cache_key_path?: string }
   ): Promise<[outPath: string | undefined, contents: Buffer | undefined]> {
     const cacheDir = this.config.cacheDir
     const isDir = isDirectory(cacheDir)
     if (!isDir) {
+      console.log('test')
       return [undefined, undefined];
     }
 
@@ -94,7 +95,7 @@ export class CacheResolver {
   }
 
   async archiveCacheFile(
-    options?: { cacheKeyPath?: string }
+    options?: { cache_key_path?: string }
   ): Promise<void> {
     const cacheDir = this.config.cacheDir
     const cacheDirExists = await isDirectory(cacheDir);
@@ -123,18 +124,18 @@ export class CacheResolver {
 
   private async genOrReadSecretKey(
     cacheDir: string,
-    options?: { cacheKeyPath?: string }
+    options?: { cache_key_path?: string }
   ): Promise<SecrectKey> {
     if (this.secretKey) return this.secretKey;
-    const cacheKeyPath: string = this.cacheKeyFilePath(cacheDir, options);
-    const isfile = await isFile(cacheKeyPath);
+    const cache_key_path: string = this.cacheKeyFilePath(cacheDir, options);
+    const isfile = await isFile(cache_key_path);
     if (!isfile) {
       const algorithm = "aes-256-cbc";
       const key = randomBytes(32);
       const iv = randomBytes(16);
       this.secretKey = { algorithm, key, iv };
       await writeFile(
-        cacheKeyPath,
+        cache_key_path,
         JSON.stringify(
           {
             algorithm: this.secretKey.algorithm,
@@ -147,7 +148,7 @@ export class CacheResolver {
       );
       return this.secretKey;
     }
-    this.secretKey = await readFile(cacheKeyPath)
+    this.secretKey = await readFile(cache_key_path)
       .then((data) => JSON.parse(data.toString()))
       .then((data) => {
         return {
@@ -165,10 +166,10 @@ export class CacheResolver {
 
   private cacheKeyFilePath(
     cacheDir: string,
-    options?: { cacheKeyPath?: string }
+    options?: { cache_key_path?: string }
   ) {
-    return options?.cacheKeyPath
-      ? resolveAbsolutePath(options.cacheKeyPath)
+    return options?.cache_key_path
+      ? resolveAbsolutePath(options.cache_key_path)
       : resolvePath(cacheDir, CACHE_KEY_FILE_NAME);
   }
 

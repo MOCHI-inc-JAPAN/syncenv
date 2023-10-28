@@ -54,21 +54,21 @@ setting:
       PIPE_TEST: "replace(FAILED, SUCCESS)"
       PIPE_REGEXP_TEST: 'replace(FAILED, *UCCE**) | replace(/\*/g, S)'
       PIPE_MULTIPLE_TEST: ['replace(FAILED, "SUCCESS ")', trim]
-    defaultReplacer: default
+    default_replacer: default
   - type: file
     output_path: ./artifacts/file-output.txt
     placeholder: $TO_BE_REPLACE $TO_BE_REPLACE_PROVIDER
     replaces:
       TO_BE_REPLACE: replaceId
       TO_BE_REPLACE_PROVIDER: __gcp:replaceId__
-    defaultReplacer?: default
+    default_replacer?: default
   - type: template
     input_path: ./fixtures/.env.template
     output_path: ./artifacts/template-output.env
     replaces:
       TO_BE_REPLACE: replaceId
       TO_BE_REPLACE_PROVIDER: __gcp:replaceId__
-    defaultReplacer?: default
+    default_replacer?: default
 ```
 
 will generate files the contents followed by in artifacts/ directory.
@@ -171,7 +171,7 @@ pipes:
 
 #### Change Replacers by each placeholder value
 
-The defaultReplacer is used useally. However, You can change replacers by each placeholder values with special syntax `__(.*):(.*)__` is available. The first mached value is plugin name and the second is request parameter for replacer provided by the plugin. The syntax matched changes replacer to be used.
+The default_replacer is used useally. However, You can change replacers by each placeholder values with special syntax `__(.*):(.*)__` is available. The first mached value is plugin name and the second is request parameter for replacer provided by the plugin. The syntax matched changes replacer to be used.
 
 ### Plugins
 
@@ -229,10 +229,10 @@ setting:
       REPLACED: student
     pipes:
       REPLACED: "postfix(1)"
-    defaultReplacer: custom
+    default_replacer: custom
 ```
 
-Syncenv imports plugins' paths and node_modules all and register the replacer named by pluginId and the pipes are available in all the config file. Specify defaultReplacer with your pluginId if you want to process replaces' values by your plugin `fetchValues` method. Then once you run `npx envsync`, you can see generated ./artifacts/.env file will be:
+Syncenv imports plugins' paths and node_modules all and register the replacer named by pluginId and the pipes are available in all the config file. Specify default_replacer with your pluginId if you want to process replaces' values by your plugin `fetchValues` method. Then once you run `npx envsync`, you can see generated ./artifacts/.env file will be:
 
 ```env
 REPLACED=pre-student-1
