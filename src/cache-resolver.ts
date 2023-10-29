@@ -100,6 +100,9 @@ export class CacheResolver {
     contents: string | ArrayBufferLike | Buffer
   ): Promise<void> {
     const cacheDir = this.config.cacheDir;
+    if(!cacheDir) {
+      return
+    }
     const isDir = isDirectory(cacheDir);
     if (!isDir) {
       await mkdir(cacheDir, { recursive: true });

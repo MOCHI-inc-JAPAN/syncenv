@@ -1,5 +1,6 @@
 import { resolve, join, dirname } from "node:path";
-import { stat, exists as fsExists} from "node:fs/promises";
+import { stat } from "node:fs/promises";
+import { existsSync as fsExists} from "node:fs";
 import { SyncenvConfigObject } from "./config-parser";
 
 

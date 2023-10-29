@@ -1,4 +1,6 @@
 plugins: ["gcp"]
+cache: ./artifacts/.syncenv
+cache_key_path: ./artifacts/.syncenv/custom-key
 setting:
   - type: ".envrc"
     output_dir: ./artifacts
