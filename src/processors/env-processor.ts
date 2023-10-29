@@ -6,11 +6,13 @@ import { writeFile } from "../writeFile";
 import { BaseProcessor } from "./base-processor";
 
 export class EnvProcessor extends BaseProcessor {
-
   constructor(
-   protected  placeholderMap: Record<string, string | number | boolean | Buffer>,
-   protected  config: Extract<SyncenvConfigObject<string>, { type: EnvType }>,
-   protected  cacheResolver: CacheResolver
+    protected placeholderMap: Record<
+      string,
+      string | number | boolean | Buffer
+    >,
+    protected config: Extract<SyncenvConfigObject<string>, { type: EnvType }>,
+    protected cacheResolver: CacheResolver
   ) {
     super(placeholderMap, cacheResolver);
   }

@@ -4,7 +4,10 @@ import { writeFile } from "../writeFile";
 
 export interface BaseProcessorConstructor {
   new (
-    placeholderMap: Record<string, string | number | boolean | Buffer | ArrayBufferLike>,
+    placeholderMap: Record<
+      string,
+      string | number | boolean | Buffer | ArrayBufferLike
+    >,
     config: SyncenvConfigObject<string>,
     cacheResolver: CacheResolver
   ): BaseProcessor;
@@ -14,13 +17,19 @@ export abstract class BaseProcessor {
   abstract process(): Promise<void>;
 
   constructor(
-    protected placeholderMap: Record<string, string | number | boolean | Buffer | ArrayBufferLike>,
+    protected placeholderMap: Record<
+      string,
+      string | number | boolean | Buffer | ArrayBufferLike
+    >,
     protected cacheResolver: CacheResolver
   ) {}
 
   protected replaceValue(
     target: string,
-    placeholderMap: Record<string, string | number | boolean | Buffer | ArrayBufferLike>
+    placeholderMap: Record<
+      string,
+      string | number | boolean | Buffer | ArrayBufferLike
+    >
   ): string {
     let newContent = target;
     Object.entries(placeholderMap).forEach(([key, value]) => {
@@ -32,10 +41,7 @@ export abstract class BaseProcessor {
     return newContent;
   }
 
-  protected async writeFile(
-    outputPath: string,
-    contents: Buffer | string
-  ) {
+  protected async writeFile(outputPath: string, contents: Buffer | string) {
     await this.cacheResolver.storeCache(outputPath, contents);
     return writeFile(outputPath, contents);
   }

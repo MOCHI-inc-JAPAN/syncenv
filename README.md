@@ -259,7 +259,7 @@ See the detail in https://cloud.google.com/docs/authentication/getting-started.
 
 ## Cache Mode
 
-As default, synenv always fetch and generate files when output files exist. Sometimes, this may annoy you when using pricing sttorage. If you want to change this behavior, set `cache: true` option and synenv will use cache files to genrate them when it is available and doesn't run provider actions. Even if you set `cache: true`, you can ignore cache  files with flag `-f or --force`.
+As default, synenv always fetch and generate files when output files exist. Sometimes, this may annoy you when using pricing sttorage. If you want to change this behavior, set `cache: true` option and synenv will use cache files to genrate them when it is available and doesn't run provider actions. Even if you set `cache: true`, you can ignore cache files with flag `-f or --force`.
 
 ```yaml
 cache: false
@@ -268,9 +268,9 @@ cache: false
 
 Cache files will be stored in your $Home/.syncenv directory with created if it doesn't exist. If you want to change the path you can configure it with cache property like `cache: /path/to/yours`.
 
-Cache directory has two type files. They are cache-key.json and syncenv-cache.data. The ${projectid}-syncenv-cache.data is encrypted your env data and cache-key.json is your encryption key. Thus, Cache directory shouldn't be shared publically, especially cache-key.json must be secret from malicious users, so you should set .gitignore your cache path if you includes in your project and should not commit them by your vcs.
+Cache directory has two type files. They are cache-key.json and syncenv cache.data. The ${cacheId}-cache.data is encrypted your env data and cache-key.json is your encryption key. Thus, Cache directory shouldn't be shared publically, especially cache-key.json must be secret from malicious users, so you should set .gitignore your cache path if you include it in your project and should not commit them to your vcs.
 
-You can change only secret key file, `cache_key_path: /path/to/yours` to share same key, it's not needed in most case.
+You can change secret key file path, `cache_key_path: /path/to/yours` to share same key, it's not needed in most case.
 
 ## Security Warning
 

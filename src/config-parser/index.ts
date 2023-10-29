@@ -1,5 +1,5 @@
-import { cosmiconfig } from "cosmiconfig";
-import { resolve } from "node:path";
+import { CosmiconfigResult, cosmiconfig } from "cosmiconfig";
+import { resolve, basename } from "node:path";
 import {
   Output,
   array,
@@ -79,32 +79,20 @@ const SyncenvConfigSchema = object({
   default_replacer: optional(string()),
   plugins: optional(array(string())),
   setting: union([SyncenvConfigObjectSchema, array(SyncenvConfigObjectSchema)]),
-  cache: transform(
-    optional(
-      union(
-        [boolean(), string()]
-      )
-    ),
-    (val) => {
-      if(!val) {
-        return undefined
-      } else {
-        return val === true ? DEFAULT_CACHE_DIR : val
-      }
+  cache: transform(optional(union([boolean(), string()])), (val) => {
+    if (!val) {
+      return undefined;
+    } else {
+      return val === true ? DEFAULT_CACHE_DIR : val;
     }
-  ),
-  cache_key_path: transform(
-    optional(
-      string()
-    ),
-    (val) => {
-      if(!val) {
-        return undefined
-      } else {
-        return  val || DEFAULT_CACHE_KEY_PATH
-      }
+  }),
+  cache_key_path: transform(optional(string()), (val) => {
+    if (!val) {
+      return undefined;
+    } else {
+      return val || DEFAULT_CACHE_KEY_PATH;
     }
-  )
+  }),
 });
 
 export type EnvType = ".env" | ".envrc";
@@ -157,8 +145,9 @@ type SyncenvConfigInternal<
   default_replacer?: DefaultPlugin;
   plugins?: string[];
   cache?: string;
-  cache_key_path: string
+  cache_key_path: string;
   setting: Setting;
+  cache_id: string;
 };
 
 export type SyncenvConfig<Replacer = string> = SyncenvConfigInternal<
@@ -184,6 +173,7 @@ function isFileType<Replacer>(
 
 export class ConfigParser {
   constructor() {}
+
   async config(configPath?: string): Promise<SyncenvConfig> {
     const explorer = cosmiconfig("syncenv");
     let parsedConfigPath = configPath;
@@ -193,19 +183,25 @@ export class ConfigParser {
     const configResult = parsedConfigPath
       ? await explorer.load(parsedConfigPath)
       : await explorer.search();
-
     if (!configResult || configResult.isEmpty) {
       throw Error("configFile does not exist.");
     }
-
-    return this.parseConfig(configResult.config);
+    const finalConfigPath = configResult.config.cache
+      ? configResult.filepath
+      : "";
+    return this.parseConfig(configResult.config, finalConfigPath);
   }
 
-  parseConfig(configFile: object): SyncenvConfig {
+  parseConfig(
+    configResult: Exclude<CosmiconfigResult, null>["config"],
+    configPath?: string
+  ): SyncenvConfig {
+    const configFile = configResult;
     const validConfig = parse(
       SyncenvConfigSchema,
       configFile
     ) as SyncenvConfigInternal;
+
     if (!Array.isArray(validConfig.setting)) {
       validConfig.setting = [validConfig.setting];
     }
@@ -250,6 +246,14 @@ export class ConfigParser {
       }
       return v;
     });
-    return validConfig as SyncenvConfig;
+
+    const cacheId =
+      validConfig.cache &&
+      [basename(process.cwd()), configPath && basename(configPath)]
+        .filter(Boolean)
+        .join("-")
+        .replaceAll("/", "-")
+        .replaceAll(".", "-dot-");
+    return { ...validConfig, cache_id: cacheId } as SyncenvConfig;
   }
 }

@@ -149,3 +149,5 @@ tmp
 !/example/.npmrc
 
 artifacts/
+
+.syncenv

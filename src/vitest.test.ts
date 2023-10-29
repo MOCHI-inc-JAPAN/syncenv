@@ -1,7 +1,7 @@
 import { test, expect } from "vitest";
-import {load} from "js-yaml";
-import {readFileSync} from "fs";
-import {resolve} from "path";
+import { load } from "js-yaml";
+import { readFileSync } from "fs";
+import { resolve } from "path";
 import { ConfigResolver, type IConfigResolver } from "./config-resolver";
 import { ConfigParser, IConfigParser, SyncenvConfig } from "./config-parser";
 import { PluginInterface } from "./plugins/plugin-interface";
@@ -12,14 +12,18 @@ import { Syncenv } from "./index";
 import { google } from "@google-cloud/secret-manager/build/protos/protos";
 import { CallOptions, Callback } from "google-gax";
 import DefaultPlugin from "./plugins/default-plugin";
+import { maxLength } from "valibot";
 
 class ConfigParserMock implements IConfigParser {
   async config() {
-    const configuration = load(readFileSync(
-      resolve(process.cwd(),'./fixtures/syncenvrc.cache.yaml')
-    ).toString()) as any
+    const configuration = load(
+      readFileSync(
+        resolve(process.cwd(), "./fixtures/syncenvrc.cache.yaml")
+      ).toString()
+    ) as any;
     return new ConfigParser().parseConfig(
-      configuration
+      configuration,
+      "./fixtures/.sycenvrc.cache.yaml"
     );
   }
 }
@@ -106,7 +110,12 @@ test("file test", async () => {
   });
   await syncenv.run();
   expect(true).toBeTruthy();
-  const cacheTest = new Syncenv(undefined, {
+  let cacheTest = new Syncenv(undefined, {
+    configParser: new ConfigParserMock(),
+    configResolver: new ConfigResolverMock(),
+  });
+  await cacheTest.run();
+  cacheTest = new Syncenv(undefined, {
     configParser: new ConfigParserMock(),
     configResolver: new ConfigResolverMock(),
   });

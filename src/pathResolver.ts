@@ -1,8 +1,7 @@
 import { resolve, join, dirname } from "node:path";
 import { stat } from "node:fs/promises";
-import { existsSync as fsExists} from "node:fs";
+import { existsSync as fsExists, statSync } from "node:fs";
 import { SyncenvConfigObject } from "./config-parser";
-
 
 type ConfigObject = SyncenvConfigObject<any>;
 type OutputConfig = Extract<ConfigObject, { output_path: any }>;
@@ -16,7 +15,7 @@ export const resolveOutputPath = (config: ConfigObject) => {
       (config as DirFileConfig).filename || (config as DirFileConfig).type!
     );
 
-  return resolveAbsolutePath(outputPath)
+  return resolveAbsolutePath(outputPath);
 };
 
 export const resolveAbsolutePath = (outputPath: string) => {
@@ -25,21 +24,29 @@ export const resolveAbsolutePath = (outputPath: string) => {
     : resolve(global.process.cwd(), outputPath);
 };
 
-
 export async function isDirectory(path: string) {
-  const dirExists = await fsExists(path)
-  if(!dirExists) {
-    return false
+  const dirExists = fsExists(path);
+  if (!dirExists) {
+    return false;
   }
   const stats = await stat(path);
-  return stats.isDirectory()
+  return stats.isDirectory();
 }
 
 export async function isFile(path: string) {
-  const fileExists = await fsExists(path)
-  if(!fileExists) {
-    return false
+  const fileExists = fsExists(path);
+  if (!fileExists) {
+    return false;
   }
   const stats = await stat(path);
-  return stats.isFile()
+  return stats.isFile();
+}
+
+export function isFileSync(path: string) {
+  const fileExists = fsExists(path);
+  if (!fileExists) {
+    return false;
+  }
+  const stats = statSync(path);
+  return stats.isFile();
 }

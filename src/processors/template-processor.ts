@@ -7,12 +7,18 @@ import { CacheResolver } from "../cache-resolver";
 
 export class TemplateProcessor extends BaseProcessor {
   constructor(
-    protected placeholderMap: Record<string, string | number | boolean | Buffer>,
-    protected config: Extract<SyncenvConfigObject<string>, { type: TemplateType }>,
+    protected placeholderMap: Record<
+      string,
+      string | number | boolean | Buffer
+    >,
+    protected config: Extract<
+      SyncenvConfigObject<string>,
+      { type: TemplateType }
+    >,
     protected cacheResolver: CacheResolver
-   ) {
-     super(placeholderMap, cacheResolver);
-   }
+  ) {
+    super(placeholderMap, cacheResolver);
+  }
 
   async process(): Promise<void> {
     const inputPath = this.config.input_path.startsWith("/")
