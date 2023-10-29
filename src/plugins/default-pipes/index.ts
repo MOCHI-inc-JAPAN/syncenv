@@ -26,4 +26,4 @@ export const trimPipe: PipeInterface = {
   },
 };
 
-export const defaulPipes = [replacePipe, trimPipe];
+export const defaultPipes = [replacePipe, trimPipe];
