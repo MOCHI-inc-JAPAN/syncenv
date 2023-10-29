@@ -1,5 +1,11 @@
 # syncenv
 
+## 2.0.0
+
+### Major Changes
+
+- 2bb1404: env update
+
 ## 1.2.0
 
 ### Minor Changes
