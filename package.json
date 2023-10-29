@@ -9,7 +9,7 @@
     "archive"
   ],
   "scripts": {
-    "test": "rimraf ./artifacts &&vitest && bun test",
+    "test": "rimraf ./artifacts && vitest && bun test",
     "build": "bun build:cjs",
     "build:cjs": "swc ./src/ -d dist && tsc",
     "build:esm": "cross-env NODE_ENV=\"production\" bun build --target=node --minify --sourcemap=external --splitting ./src/index.ts --outdir=./dist",

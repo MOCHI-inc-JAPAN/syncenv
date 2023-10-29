@@ -11,7 +11,7 @@ import { isDirectory, isFile, resolveAbsolutePath } from "./pathResolver";
 import { writeFile } from "./writeFile";
 
 const CACHE_KEY_FILE_NAME = "cache-key.json";
-const CACHE_FILE_NAME = "synenv-cache.data";
+const CACHE_FILE_NAME = "syncenv-cache.data";
 
 export const DEFAULT_CACHE_DIR = resolvePath(homedir(), ".syncenv");
 export const DEFAULT_CACHE_KEY_PATH = resolvePath(
@@ -29,7 +29,7 @@ export class CacheResolver {
   cacheFiles: Promise<Record<string, Buffer>> | undefined;
   private cacheGzipPack: Pack;
   private secretKey: SecrectKey | undefined;
-  config: { cacheDir: string } = { cacheDir: "" };
+  config: { cacheDir: string, cacheId: string } = { cacheDir: "", cacheId: '' };
 
   constructor() {
     this.cacheGzipPack = pack();
@@ -53,7 +53,7 @@ export class CacheResolver {
       const secretKey = await this.genOrReadSecretKey(cacheDir, options);
       this.cacheFiles = new Promise(async (resolve, reject) => {
         const pipePromises: Promise<[string, Buffer]>[] = [];
-        const cacheFilePath = resolvePath(cacheDir, CACHE_FILE_NAME);
+        const cacheFilePath = resolvePath(cacheDir, this.cacheFileName());
         const isfile = await isFile(cacheFilePath);
         if (!isfile) {
           resolve(Object.fromEntries(await Promise.all(pipePromises)));
@@ -127,7 +127,7 @@ export class CacheResolver {
     );
     await new Promise((resolve, reject)=> {
       const archiveFileWriteStream = createWriteStream(
-        resolvePath(cacheDir, CACHE_FILE_NAME)
+        resolvePath(cacheDir, this.cacheFileName())
       );
 
       const end = this.cacheGzipPack.pipe(createGzip()).pipe(cipher).pipe(archiveFileWriteStream);
@@ -193,6 +193,11 @@ export class CacheResolver {
     return options?.cache_key_path
       ? resolveAbsolutePath(options.cache_key_path)
       : resolvePath(cacheDir, CACHE_KEY_FILE_NAME);
+  }
+
+  private cacheFileName() {
+    const cacheId = this.config.cacheId || process.cwd().split("/").pop();
+    return `${cacheId}-${CACHE_FILE_NAME}`
   }
 
   private async resolveCacheKeyPath(

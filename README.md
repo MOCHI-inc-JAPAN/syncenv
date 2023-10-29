@@ -265,3 +265,13 @@ As default, synenv always fetch and generate files when output files exist. Some
 cache: false
 ...(other configs)
 ```
+
+Cache files will be stored in your $Home/.syncenv directory with created if it doesn't exist. If you want to change the path you can configure it with cache property like `cache: /path/to/yours`.
+
+Cache directory has two type files. They are cache-key.json and syncenv-cache.data. The ${projectid}-syncenv-cache.data is encrypted your env data and cache-key.json is your encryption key. Thus, Cache directory shouldn't be shared publically, especially cache-key.json must be secret from malicious users, so you should set .gitignore your cache path if you includes in your project and should not commit them by your vcs.
+
+You can change only secret key file, `cache_key_path: /path/to/yours` to share same key, it's not needed in most case.
+
+## Security Warning
+
+If you use .syncenv and others, be careful not to let malicious users modify syncenv config files or steal your secret keys. Especially, if you commit oss project and run syncenv in CI environment have permission to access your secret env storage, it may be possible to send your secrets to their servers revising syncenv config files or add malicious plugins to it. In addition, if you locate syncenv cache directory in your project with vcs, don't forget ignore it or locate your secret key file out of your version control.
