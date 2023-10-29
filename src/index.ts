@@ -190,7 +190,10 @@ export class Syncenv {
     const setting = config.setting;
     const queues: Promise<any>[] = [];
     if (config.cache) {
-      this.cacheResolver.setCacheDir(config.cache)
+      this.cacheResolver.setCacheConfig({
+        cacheDir: config.cache,
+        cacheId: config.cache_id,
+      });
     }
     for (const params of setting) {
       if (config.cache && !this.force) {
@@ -199,7 +202,7 @@ export class Syncenv {
           config
         );
         if (outPath && contents) {
-          writeFile(outPath, contents)
+          writeFile(outPath, contents);
           console.info(`${outPath} has used cache.`);
           continue;
         }
@@ -214,12 +217,16 @@ export class Syncenv {
         params.pipes
       );
       const processorClass = processors[params.type];
-      const processor = new processorClass(placeholderMapping, params, this.cacheResolver);
+      const processor = new processorClass(
+        placeholderMapping,
+        params,
+        this.cacheResolver
+      );
       queues.push(processor.process());
     }
     await Promise.all(queues);
     if (config.cache) {
-      await this.cacheResolver.archiveCacheFile(config)
+      await this.cacheResolver.archiveCacheFile(config);
     }
   }
 }

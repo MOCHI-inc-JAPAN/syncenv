@@ -1,7 +1,7 @@
 import { test, expect } from "vitest";
-import {load} from "js-yaml";
-import {readFileSync} from "fs";
-import {resolve} from "path";
+import { load } from "js-yaml";
+import { readFileSync } from "fs";
+import { resolve } from "path";
 import { ConfigResolver, type IConfigResolver } from "./config-resolver";
 import { ConfigParser, IConfigParser, SyncenvConfig } from "./config-parser";
 import { PluginInterface } from "./plugins/plugin-interface";
@@ -15,12 +15,12 @@ import DefaultPlugin from "./plugins/default-plugin";
 
 class ConfigParserMock implements IConfigParser {
   async config() {
-    const configuration = load(readFileSync(
-      resolve(process.cwd(),'./fixtures/syncenvrc.cache.yaml')
-    ).toString()) as any
-    return new ConfigParser().parseConfig(
-      configuration
-    );
+    const configuration = load(
+      readFileSync(
+        resolve(process.cwd(), "./fixtures/syncenvrc.cache.yaml")
+      ).toString()
+    ) as any;
+    return new ConfigParser().parseConfig(configuration, './fixtures/.sycenvrc.cache.yaml');
   }
 }
 

@@ -4,14 +4,16 @@ import { resolveOutputPath } from "../pathResolver";
 import { CacheResolver } from "../cache-resolver";
 
 export class FileProcessor extends BaseProcessor {
-
   constructor(
-    protected  placeholderMap: Record<string, string | number | boolean | Buffer>,
+    protected placeholderMap: Record<
+      string,
+      string | number | boolean | Buffer
+    >,
     protected config: Extract<SyncenvConfigObject<string>, { type: FileType }>,
-    protected  cacheResolver: CacheResolver
-   ) {
-     super(placeholderMap, cacheResolver);
-   }
+    protected cacheResolver: CacheResolver
+  ) {
+    super(placeholderMap, cacheResolver);
+  }
 
   async process(): Promise<void> {
     const outPath = resolveOutputPath(this.config);

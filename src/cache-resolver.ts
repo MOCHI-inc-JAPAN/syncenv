@@ -2,7 +2,7 @@ import concat from "concat-stream";
 import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
 import { createReadStream, createWriteStream } from "node:fs";
 import { mkdir, readFile } from "node:fs/promises";
-import { resolve as resolvePath } from "node:path";
+import { resolve as resolvePath, basename } from "node:path";
 import { homedir } from "os";
 import { t as tart } from "tar";
 import { pack, Pack } from "tar-stream";
@@ -11,7 +11,6 @@ import { isDirectory, isFile, resolveAbsolutePath } from "./pathResolver";
 import { writeFile } from "./writeFile";
 
 const CACHE_KEY_FILE_NAME = "cache-key.json";
-const CACHE_FILE_NAME = "syncenv-cache.data";
 
 export const DEFAULT_CACHE_DIR = resolvePath(homedir(), ".syncenv");
 export const DEFAULT_CACHE_KEY_PATH = resolvePath(
@@ -25,18 +24,23 @@ type SecrectKey = {
   iv: Buffer;
 };
 
+type CacheConfig = { cacheDir: string; cacheId: string };
+
 export class CacheResolver {
   cacheFiles: Promise<Record<string, Buffer>> | undefined;
   private cacheGzipPack: Pack;
   private secretKey: SecrectKey | undefined;
-  config: { cacheDir: string, cacheId: string } = { cacheDir: "", cacheId: '' };
+  config: CacheConfig = { cacheDir: "", cacheId: "" };
 
   constructor() {
     this.cacheGzipPack = pack();
   }
 
-  setCacheDir(cacheDir: string) {
-    this.config.cacheDir = cacheDir;
+  setCacheConfig(cacheConfig: Partial<CacheConfig>) {
+    this.config = {
+      ...this.config,
+      ...cacheConfig,
+    };
   }
 
   async restoreCache(
@@ -125,20 +129,24 @@ export class CacheResolver {
       secretKey.key,
       secretKey.iv
     );
-    await new Promise((resolve, reject)=> {
+    await new Promise((resolve, reject) => {
       const archiveFileWriteStream = createWriteStream(
         resolvePath(cacheDir, this.cacheFileName())
       );
 
-      const end = this.cacheGzipPack.pipe(createGzip()).pipe(cipher).pipe(archiveFileWriteStream);
+      const end = this.cacheGzipPack
+        .pipe(createGzip())
+        .pipe(cipher)
+        .pipe(archiveFileWriteStream);
 
-      end.on("finish", () => {
-        resolve(undefined)
-      }).on("error", reject);
+      end
+        .on("finish", () => {
+          resolve(undefined);
+        })
+        .on("error", reject);
 
       this.cacheGzipPack.finalize();
-    })
-
+    });
   }
 
   private async genOrReadSecretKey(
@@ -196,8 +204,7 @@ export class CacheResolver {
   }
 
   private cacheFileName() {
-    const cacheId = this.config.cacheId || process.cwd().split("/").pop();
-    return `${cacheId}-${CACHE_FILE_NAME}`
+    return `${this.config.cacheId}-syncenv-cache.data`;
   }
 
   private async resolveCacheKeyPath(
