@@ -1,8 +1,10 @@
 import concat from "concat-stream";
+import { Readable, Writable } from "node:stream";
 import { createReadStream, createWriteStream } from "node:fs";
 import { mkdir, readFile } from "node:fs/promises";
 import { resolve as resolvePath } from "node:path";
-import { Pack, t as tart } from "tar";
+import { Pack, t as tart, ReadEntry, Header, Parse } from "tar";
+import { pack, Pack as StreamPack } from "tar-stream";
 import { isDirectory, isFile, resolveAbsolutePath } from "./pathResolver";
 import { randomBytes, createCipheriv, createDecipheriv } from "crypto";
 import { writeFile } from "./writeFile";
@@ -11,8 +13,11 @@ import { homedir } from "os";
 const CACHE_KEY_FILE_NAME = "cache-key.json";
 const CACHE_FILE_NAME = "synenv-cache.data";
 
-export const DEFAULT_CACHE_DIR = resolvePath(homedir(), '.syncenv')
-export const DEFAULT_CACHE_KEY_PATH = resolvePath(DEFAULT_CACHE_DIR, CACHE_KEY_FILE_NAME)
+export const DEFAULT_CACHE_DIR = resolvePath(homedir(), ".syncenv");
+export const DEFAULT_CACHE_KEY_PATH = resolvePath(
+  DEFAULT_CACHE_DIR,
+  CACHE_KEY_FILE_NAME
+);
 
 type SecrectKey = {
   algorithm: string;
@@ -33,17 +38,16 @@ export class CacheResolver {
   }
 
   setCacheDir(cacheDir: string) {
-    this.config.cacheDir = cacheDir
+    this.config.cacheDir = cacheDir;
   }
 
   async restoreCache(
     outputPath: string,
     options?: { cache_key_path?: string }
   ): Promise<[outPath: string | undefined, contents: Buffer | undefined]> {
-    const cacheDir = this.config.cacheDir
-    const isDir = isDirectory(cacheDir)
+    const cacheDir = this.config.cacheDir;
+    const isDir = isDirectory(cacheDir);
     if (!isDir) {
-      console.log('test')
       return [undefined, undefined];
     }
 
@@ -56,15 +60,20 @@ export class CacheResolver {
       );
       this.cacheFiles = new Promise(async (resolve, reject) => {
         const pipePromises: Promise<[string, Buffer]>[] = [];
-        const cacheFilePath = resolvePath(cacheDir, CACHE_FILE_NAME)
-        const isfile = await isFile(cacheFilePath)
-        if(!isfile) {
-          resolve(Object.fromEntries(await Promise.all(pipePromises)))
-          return
+        const cacheFilePath = resolvePath(cacheDir, CACHE_FILE_NAME);
+        const isfile = await isFile(cacheFilePath);
+        if (!isfile) {
+          resolve(Object.fromEntries(await Promise.all(pipePromises)));
+          return;
         }
-        createReadStream(cacheFilePath)
-          .pipe(tart())
+        const tarPipe = createReadStream(cacheFilePath)
           .pipe(decipher)
+          .on("error", (err) => {
+            reject(err);
+          })
+          .pipe(tart());
+
+        tarPipe
           .on("entry", (entry) => {
             const task = new Promise<[string, Buffer]>((resolve, reject) => {
               if (entry.type === "File") {
@@ -90,24 +99,51 @@ export class CacheResolver {
     outputPath: string,
     contents: string | ArrayBufferLike | Buffer
   ): Promise<void> {
-    const cacheDir = this.config.cacheDir
-    const isDir = isDirectory(cacheDir)
+    const cacheDir = this.config.cacheDir;
+    const isDir = isDirectory(cacheDir);
     if (!isDir) {
       await mkdir(cacheDir, { recursive: true });
     }
 
-    const pack = this.cacheGzipPack.add(this.fileKey(outputPath)).on("error",(e)=>{
-      console.log(e)
+
+    await new Promise((resolve, reject) => {
+      const streamPack = pack() // pack is a stream
+
+      const entry = streamPack.entry({ name: 'my-stream-test.txt', size: 11 }, function(err) {
+        // the stream was added
+        // no more entries
+        streamPack.finalize()
+      })
+
+      entry.write(contents)
+      entry.end()
+
+      const parser = new Parse();
+      // parserオブジェクトの'entry'イベントをリッスン
+      parser.on("entry", (entry) => {
+        console.log("entry");
+        this.cacheGzipPack = this.cacheGzipPack
+          .add(entry)
+          .on("error", (e) => {
+            console.log("error");
+            console.log(e);
+          })
+          .end(() => {
+            console.log("end");
+            resolve(true);
+          });
+        console.log(entry.path); // 各エントリのパスを出力
+        entry.resume(); // 次のエントリに進むために現在のエントリのデータを破棄
+      }).on("end", () => {
+        console.log("end");
+      })
+
+      streamPack.on('error', reject).pipe(parser);
     });
-
-    pack.write(contents);
-
   }
 
-  async archiveCacheFile(
-    options?: { cache_key_path?: string }
-  ): Promise<void> {
-    const cacheDir = this.config.cacheDir
+  async archiveCacheFile(options?: { cache_key_path?: string }): Promise<void> {
+    const cacheDir = this.config.cacheDir;
     const cacheDirExists = await isDirectory(cacheDir);
     if (!cacheDirExists) {
       await mkdir(cacheDir, { recursive: true });
@@ -123,15 +159,15 @@ export class CacheResolver {
       secretKey.key,
       secretKey.iv
     );
-    return new Promise((resolve, _) => {
+    return new Promise((resolve, reject) => {
       this.cacheGzipPack
         .pipe(cipher)
         .pipe(archiveFileWriteStream)
-        .on("error",()=>{
-          console.log('test')
+        .on("error", (e) => {
+          reject(e)
         })
         .on("finish", () => {
-          console.log('finish')
+          console.log("finish");
           resolve();
         });
     });
