@@ -154,10 +154,10 @@ export class Syncenv {
     const finalConfig: ParseOptionResult = {};
     for (const index of range) {
       if (["-h", "--help"].includes(options[index])) {
-        console.log(
+        console.info(
           "syncenv: command line tools management environment values in files."
         );
-        console.log(
+        console.info(
           "  --config, -c <path>: arbitrary config path is not configured by cosmiconfig."
         );
         return {

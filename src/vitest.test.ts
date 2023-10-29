@@ -16,7 +16,7 @@ import DefaultPlugin from "./plugins/default-plugin";
 class ConfigParserMock implements IConfigParser {
   async config() {
     const configuration = load(readFileSync(
-      resolve(process.cwd(),'./fixtures/syncenvrc.yaml')
+      resolve(process.cwd(),'./fixtures/syncenvrc.cache.yaml')
     ).toString()) as any
     return new ConfigParser().parseConfig(
       configuration
@@ -105,5 +105,11 @@ test("file test", async () => {
     configResolver: new ConfigResolverMock(),
   });
   await syncenv.run();
+  expect(true).toBeTruthy();
+  const cacheTest = new Syncenv(undefined, {
+    configParser: new ConfigParserMock(),
+    configResolver: new ConfigResolverMock(),
+  });
+  await cacheTest.run();
   expect(true).toBeTruthy();
 });

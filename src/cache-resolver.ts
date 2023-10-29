@@ -1,14 +1,14 @@
 import concat from "concat-stream";
-import { Readable, Writable } from "node:stream";
+import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
 import { createReadStream, createWriteStream } from "node:fs";
 import { mkdir, readFile } from "node:fs/promises";
 import { resolve as resolvePath } from "node:path";
-import { Pack, t as tart, ReadEntry, Header, Parse } from "tar";
-import { pack, Pack as StreamPack } from "tar-stream";
-import { isDirectory, isFile, resolveAbsolutePath } from "./pathResolver";
-import { randomBytes, createCipheriv, createDecipheriv } from "crypto";
-import { writeFile } from "./writeFile";
 import { homedir } from "os";
+import { t as tart } from "tar";
+import { pack, Pack } from "tar-stream";
+import { createGzip } from "node:zlib";
+import { isDirectory, isFile, resolveAbsolutePath } from "./pathResolver";
+import { writeFile } from "./writeFile";
 
 const CACHE_KEY_FILE_NAME = "cache-key.json";
 const CACHE_FILE_NAME = "synenv-cache.data";
@@ -32,9 +32,7 @@ export class CacheResolver {
   config: { cacheDir: string } = { cacheDir: "" };
 
   constructor() {
-    this.cacheGzipPack = new Pack({
-      gzip: true,
-    });
+    this.cacheGzipPack = pack();
   }
 
   setCacheDir(cacheDir: string) {
@@ -53,11 +51,6 @@ export class CacheResolver {
 
     if (!this.cacheFiles) {
       const secretKey = await this.genOrReadSecretKey(cacheDir, options);
-      const decipher = createDecipheriv(
-        secretKey.algorithm,
-        secretKey.key,
-        secretKey.iv
-      );
       this.cacheFiles = new Promise(async (resolve, reject) => {
         const pipePromises: Promise<[string, Buffer]>[] = [];
         const cacheFilePath = resolvePath(cacheDir, CACHE_FILE_NAME);
@@ -66,6 +59,11 @@ export class CacheResolver {
           resolve(Object.fromEntries(await Promise.all(pipePromises)));
           return;
         }
+        const decipher = createDecipheriv(
+          secretKey.algorithm,
+          secretKey.key,
+          secretKey.iv
+        );
         const tarPipe = createReadStream(cacheFilePath)
           .pipe(decipher)
           .on("error", (err) => {
@@ -100,49 +98,18 @@ export class CacheResolver {
     contents: string | ArrayBufferLike | Buffer
   ): Promise<void> {
     const cacheDir = this.config.cacheDir;
-    if(!cacheDir) {
-      return
+    if (!cacheDir) {
+      return;
     }
     const isDir = isDirectory(cacheDir);
     if (!isDir) {
       await mkdir(cacheDir, { recursive: true });
     }
 
-
-    await new Promise((resolve, reject) => {
-      const streamPack = pack() // pack is a stream
-
-      const entry = streamPack.entry({ name: 'my-stream-test.txt', size: 11 }, function(err) {
-        // the stream was added
-        // no more entries
-        streamPack.finalize()
-      })
-
-      entry.write(contents)
-      entry.end()
-
-      const parser = new Parse();
-      // parserオブジェクトの'entry'イベントをリッスン
-      parser.on("entry", (entry) => {
-        console.log("entry");
-        this.cacheGzipPack = this.cacheGzipPack
-          .add(entry)
-          .on("error", (e) => {
-            console.log("error");
-            console.log(e);
-          })
-          .end(() => {
-            console.log("end");
-            resolve(true);
-          });
-        console.log(entry.path); // 各エントリのパスを出力
-        entry.resume(); // 次のエントリに進むために現在のエントリのデータを破棄
-      }).on("end", () => {
-        console.log("end");
-      })
-
-      streamPack.on('error', reject).pipe(parser);
-    });
+    this.cacheGzipPack.entry(
+      { name: this.fileKey(outputPath) },
+      contents as Buffer
+    );
   }
 
   async archiveCacheFile(options?: { cache_key_path?: string }): Promise<void> {
@@ -152,28 +119,26 @@ export class CacheResolver {
       await mkdir(cacheDir, { recursive: true });
     }
 
-    const archiveFileWriteStream = createWriteStream(
-      resolvePath(cacheDir, CACHE_FILE_NAME)
-    );
-
     const secretKey = await this.genOrReadSecretKey(cacheDir, options);
     const cipher = createCipheriv(
       secretKey.algorithm,
       secretKey.key,
       secretKey.iv
     );
-    return new Promise((resolve, reject) => {
-      this.cacheGzipPack
-        .pipe(cipher)
-        .pipe(archiveFileWriteStream)
-        .on("error", (e) => {
-          reject(e)
-        })
-        .on("finish", () => {
-          console.log("finish");
-          resolve();
-        });
-    });
+    await new Promise((resolve, reject)=> {
+      const archiveFileWriteStream = createWriteStream(
+        resolvePath(cacheDir, CACHE_FILE_NAME)
+      );
+
+      const end = this.cacheGzipPack.pipe(createGzip()).pipe(cipher).pipe(archiveFileWriteStream);
+
+      end.on("finish", () => {
+        resolve(undefined)
+      }).on("error", reject);
+
+      this.cacheGzipPack.finalize();
+    })
+
   }
 
   private async genOrReadSecretKey(
@@ -215,7 +180,10 @@ export class CacheResolver {
   }
 
   private fileKey(outputPath: string) {
-    return outputPath.replaceAll("/", "-").replaceAll(".", "-dot-");
+    return outputPath
+      .replace(new RegExp(process.cwd() + "/?"), "")
+      .replaceAll("/", "-")
+      .replaceAll(".", "-dot-");
   }
 
   private cacheKeyFilePath(
