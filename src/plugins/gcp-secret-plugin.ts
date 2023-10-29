@@ -12,7 +12,7 @@ export type IGcpSecretReplacerClient = Pick<
 
 export default class GcpSecretPlugin extends PluginInterface {
   static pluginId: "gcp" = "gcp";
-  private results: Record<string, string> = {};
+  private resultCache: Record<string, Record<string, string>> = {};
 
   constructor(
     private client: IGcpSecretReplacerClient = new SecretManagerServiceClient()
@@ -24,8 +24,12 @@ export default class GcpSecretPlugin extends PluginInterface {
     replaces: Record<string, string>,
     config: SyncenvConfig
   ): Promise<Record<string, string>> {
+    const results: Record<string, string> = {};
     for (let [key, requestId] of Object.entries(replaces)) {
-      if (!this.results[key]) {
+      const cacheValue = this.getCacheValue(key, requestId);
+      if (cacheValue) {
+        results[key] = cacheValue;
+      } else {
         try {
           const [data] = await this.client.accessSecretVersion({
             name: requestId,
@@ -34,12 +38,29 @@ export default class GcpSecretPlugin extends PluginInterface {
           if (!replacedValue) {
             console.warn(`Cannot access gcp secret ${requestId}`);
           }
-          this.results[key] = replacedValue || "";
+          results[key] = replacedValue || "";
+          this.setCacheValue(key, requestId, results[key]);
         } catch (e) {
           console.warn(e);
         }
       }
     }
-    return this.results;
+    return results;
+  }
+
+  private getCacheValue(key: string, requestId: string): string | undefined {
+    if (this.resultCache[key]?.[requestId]) {
+      return this.resultCache[key][requestId];
+    }
+  }
+
+  private setCacheValue(key: string, requestId: string, value: string): void {
+    if (!this.resultCache[key]) {
+      this.resultCache[key] = {};
+    }
+    this.resultCache[key] = {
+      ...this.resultCache[key],
+      [requestId]: value,
+    };
   }
 }

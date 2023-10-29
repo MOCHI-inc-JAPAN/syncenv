@@ -1,15 +1,15 @@
 import { test, expect, mock } from "bun:test";
 import * as configuration from "../fixtures/syncenvrc.yaml";
-import { ConfigResolver, type IConfigResolver } from "./config-resolver";
-import { ConfigParser, IConfigParser, SyncenvConfig } from "./config-parser";
-import { PluginInterface } from "./plugins/plugin-interface";
+import { ConfigResolver, type IConfigResolver } from "../src/config-resolver";
+import { ConfigParser, IConfigParser, SyncenvConfig } from "../src/config-parser";
+import { PluginInterface } from "../src/plugins/plugin-interface";
 import GcpSecretPlugin, {
   IGcpSecretReplacerClient,
-} from "./plugins/gcp-secret-plugin";
-import { Syncenv } from "./index";
+} from "../src/plugins/gcp-secret-plugin";
+import { Syncenv } from "../src/index";
 import { google } from "@google-cloud/secret-manager/build/protos/protos";
 import { CallOptions, Callback } from "google-gax";
-import DefaultPlugin from "./plugins/default-plugin";
+import DefaultPlugin from "../src/plugins/default-plugin";
 
 class ConfigParserMock implements IConfigParser {
   async config() {

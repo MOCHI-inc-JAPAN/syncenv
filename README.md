@@ -54,21 +54,21 @@ setting:
       PIPE_TEST: "replace(FAILED, SUCCESS)"
       PIPE_REGEXP_TEST: 'replace(FAILED, *UCCE**) | replace(/\*/g, S)'
       PIPE_MULTIPLE_TEST: ['replace(FAILED, "SUCCESS ")', trim]
-    defaultReplacer: default
+    default_replacer: default
   - type: file
     output_path: ./artifacts/file-output.txt
     placeholder: $TO_BE_REPLACE $TO_BE_REPLACE_PROVIDER
     replaces:
       TO_BE_REPLACE: replaceId
       TO_BE_REPLACE_PROVIDER: __gcp:replaceId__
-    defaultReplacer?: default
+    default_replacer?: default
   - type: template
     input_path: ./fixtures/.env.template
     output_path: ./artifacts/template-output.env
     replaces:
       TO_BE_REPLACE: replaceId
       TO_BE_REPLACE_PROVIDER: __gcp:replaceId__
-    defaultReplacer?: default
+    default_replacer?: default
 ```
 
 will generate files the contents followed by in artifacts/ directory.
@@ -171,7 +171,7 @@ pipes:
 
 #### Change Replacers by each placeholder value
 
-The defaultReplacer is used useally. However, You can change replacers by each placeholder values with special syntax `__(.*):(.*)__` is available. The first mached value is plugin name and the second is request parameter for replacer provided by the plugin. The syntax matched changes replacer to be used.
+The default_replacer is used useally. However, You can change replacers by each placeholder values with special syntax `__(.*):(.*)__` is available. The first mached value is plugin name and the second is request parameter for replacer provided by the plugin. The syntax matched changes replacer to be used.
 
 ### Plugins
 
@@ -229,10 +229,10 @@ setting:
       REPLACED: student
     pipes:
       REPLACED: "postfix(1)"
-    defaultReplacer: custom
+    default_replacer: custom
 ```
 
-Syncenv imports plugins' paths and node_modules all and register the replacer named by pluginId and the pipes are available in all the config file. Specify defaultReplacer with your pluginId if you want to process replaces' values by your plugin `fetchValues` method. Then once you run `npx envsync`, you can see generated ./artifacts/.env file will be:
+Syncenv imports plugins' paths and node_modules all and register the replacer named by pluginId and the pipes are available in all the config file. Specify default_replacer with your pluginId if you want to process replaces' values by your plugin `fetchValues` method. Then once you run `npx envsync`, you can see generated ./artifacts/.env file will be:
 
 ```env
 REPLACED=pre-student-1
@@ -259,9 +259,19 @@ See the detail in https://cloud.google.com/docs/authentication/getting-started.
 
 ## Cache Mode
 
-As default, synenv doesn't fetch and generate files when output files exist. If you want to change this behavior, set `cache: false` option and synenv will always run fetch and generate files prossess. Even if you set `cache: true` (or keep the default), you can force to make this process run with flag `-f or --force`.
+As default, synenv always fetch and generate files when output files exist. Sometimes, this may annoy you when using pricing sttorage. If you want to change this behavior, set `cache: true` option and synenv will use cache files to genrate them when it is available and doesn't run provider actions. Even if you set `cache: true`, you can ignore cache  files with flag `-f or --force`.
 
 ```yaml
 cache: false
 ...(other configs)
 ```
+
+Cache files will be stored in your $Home/.syncenv directory with created if it doesn't exist. If you want to change the path you can configure it with cache property like `cache: /path/to/yours`.
+
+Cache directory has two type files. They are cache-key.json and syncenv-cache.data. The ${projectid}-syncenv-cache.data is encrypted your env data and cache-key.json is your encryption key. Thus, Cache directory shouldn't be shared publically, especially cache-key.json must be secret from malicious users, so you should set .gitignore your cache path if you includes in your project and should not commit them by your vcs.
+
+You can change only secret key file, `cache_key_path: /path/to/yours` to share same key, it's not needed in most case.
+
+## Security Warning
+
+If you use .syncenv and others, be careful not to let malicious users modify syncenv config files or steal your secret keys. Especially, if you commit oss project and run syncenv in CI environment have permission to access your secret env storage, it may be possible to send your secrets to their servers revising syncenv config files or add malicious plugins to it. In addition, if you locate syncenv cache directory in your project with vcs, don't forget ignore it or locate your secret key file out of your version control.

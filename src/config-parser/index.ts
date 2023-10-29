@@ -1,23 +1,26 @@
 import { cosmiconfig } from "cosmiconfig";
+import { resolve } from "node:path";
 import {
-  record,
-  object,
-  union,
-  string,
-  literal,
-  optional,
-  parse,
+  Output,
   array,
   boolean,
-  number,
   coerce,
-  Output,
+  literal,
+  number,
+  object,
+  optional,
+  parse,
+  record,
+  string,
+  transform,
+  union,
 } from "valibot";
-import { resolve } from "node:path";
+import { DEFAULT_CACHE_DIR, DEFAULT_CACHE_KEY_PATH } from "../cache-resolver";
 import { parseMatch } from "../parseSetting";
 
 export type ProviderType = "gcp";
 export type Placeholder = `$\{${string}\}` | `$${string}`;
+
 export type ReplacerTemplate = `__${ProviderType}:${string}__`;
 
 type EnvValue = {
@@ -43,15 +46,23 @@ const SyncenvConfigObjectSchema = union([
     replaces: optional(ReplacesSchema),
     pipes: optional(PipeSchema),
     quate: coerce(string(), (val) => (val as string) ?? '"'),
-    defaultReducer: optional(string()),
+    default_replacer: optional(string()),
   }),
   object({
     type: literal("file"),
     output_path: string(),
-    placeholder: string(),
-    replaces: optional(ReplacesSchema),
-    pipes: optional(PipeSchema),
-    defaultReducer: optional(string()),
+    placeholder: optional(string()),
+    replaces: transform(optional(union([ReplacesSchema, string()])), (val) =>
+      typeof val === "string" ? { "@@content": val } : val
+    ),
+    pipes: transform(
+      optional(union([PipeSchema, string(), array(string())])),
+      (val) =>
+        typeof val === "string" || Array.isArray(val)
+          ? { "@@content": val }
+          : val
+    ),
+    default_replacer: optional(string()),
   }),
   object({
     type: literal("template"),
@@ -59,16 +70,41 @@ const SyncenvConfigObjectSchema = union([
     output_path: string(),
     replaces: optional(ReplacesSchema),
     pipes: optional(PipeSchema),
-    defaultReducer: optional(string()),
+    default_replacer: optional(string()),
   }),
 ]);
 
 const SyncenvConfigSchema = object({
   replaces: optional(ReplacesSchema),
-  defaultReplacer: optional(string()),
+  default_replacer: optional(string()),
   plugins: optional(array(string())),
   setting: union([SyncenvConfigObjectSchema, array(SyncenvConfigObjectSchema)]),
-  cache: coerce(boolean(), (val) => (typeof val === "boolean" ? val : true)),
+  cache: transform(
+    optional(
+      union(
+        [boolean(), string()]
+      )
+    ),
+    (val) => {
+      if(!val) {
+        return undefined
+      } else {
+        return val === true ? DEFAULT_CACHE_DIR : val
+      }
+    }
+  ),
+  cache_key_path: transform(
+    optional(
+      string()
+    ),
+    (val) => {
+      if(!val) {
+        return undefined
+      } else {
+        return  val || DEFAULT_CACHE_KEY_PATH
+      }
+    }
+  )
 });
 
 export type EnvType = ".env" | ".envrc";
@@ -87,16 +123,16 @@ type EnvObject<Replacer> = {
   quate: string;
   replaces?: ReplacerValue;
   pipes?: PipeOptions;
-  defaultReplacer?: Replacer;
+  default_replacer?: Replacer;
 };
 
 type FileObject<Replacer> = {
   type: FileType;
   output_path: string;
-  placeholder: string;
+  placeholder?: string;
   replaces?: ReplacerValue;
   pipes?: PipeOptions;
-  defaultReplacer?: Replacer;
+  default_replacer?: Replacer;
 };
 
 type TemplateObject<Replacer> = {
@@ -105,7 +141,7 @@ type TemplateObject<Replacer> = {
   output_path: string;
   replaces?: ReplacerValue;
   pipes?: PipeOptions;
-  defaultReplacer?: Replacer;
+  default_replacer?: Replacer;
 };
 
 export type SyncenvConfigObject<Replacer> =
@@ -118,9 +154,10 @@ type SyncenvConfigInternal<
   DefaultPlugin = string
 > = {
   replaces?: ReplacerValue;
-  defaultReplacer?: DefaultPlugin;
+  default_replacer?: DefaultPlugin;
   plugins?: string[];
-  cache?: boolean;
+  cache?: string;
+  cache_key_path: string
   setting: Setting;
 };
 
@@ -137,6 +174,12 @@ function isEnvType<Replacer>(
   value: SyncenvConfigObject<Replacer>
 ): value is EnvObject<Replacer> {
   return value.type === ".env" || value.type === ".envrc";
+}
+
+function isFileType<Replacer>(
+  value: SyncenvConfigObject<Replacer>
+): value is FileObject<Replacer> {
+  return value.type === "file";
 }
 
 export class ConfigParser {
@@ -168,8 +211,20 @@ export class ConfigParser {
     }
 
     validConfig.setting = validConfig.setting.map((v) => {
-      if (!v.defaultReplacer && validConfig.defaultReplacer) {
-        v.defaultReplacer = validConfig.defaultReplacer;
+      if (!v.default_replacer && validConfig.default_replacer) {
+        v.default_replacer = validConfig.default_replacer;
+      }
+      if (isFileType(v)) {
+        if (!v.placeholder && v.replaces && !v.replaces["@@content"]) {
+          throw new Error(
+            `The replaces property must be string without placeholder.`
+          );
+        }
+        if (!v.placeholder && v.pipes && !v.pipes["@@content"]) {
+          throw new Error(
+            `The pipes property must be string or string[] without placeholder.`
+          );
+        }
       }
       if (isEnvType(v)) {
         for (const [key, value] of Object.entries(v.env)) {

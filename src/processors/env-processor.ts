@@ -1,17 +1,20 @@
-import { EnvType, SyncenvConfigObject } from "../config-parser";
-import { BaseProcessor } from "./base-processor";
-import { join, resolve } from "node:path";
-import { writeFile } from "../writeFile";
 import { EOL } from "node:os";
+import { CacheResolver } from "../cache-resolver";
+import { EnvType, SyncenvConfigObject } from "../config-parser";
 import { resolveOutputPath } from "../pathResolver";
+import { writeFile } from "../writeFile";
+import { BaseProcessor } from "./base-processor";
 
 export class EnvProcessor extends BaseProcessor {
+
   constructor(
-    private placeholderMap: Record<string, string | number | boolean>,
-    private config: Extract<SyncenvConfigObject<string>, { type: EnvType }>
+   protected  placeholderMap: Record<string, string | number | boolean | Buffer>,
+   protected  config: Extract<SyncenvConfigObject<string>, { type: EnvType }>,
+   protected  cacheResolver: CacheResolver
   ) {
-    super();
+    super(placeholderMap, cacheResolver);
   }
+
   async process(): Promise<void> {
     const outPath = resolveOutputPath(this.config);
     const contents = Object.entries(this.config.env).map(([key, value]) => {
@@ -26,7 +29,7 @@ export class EnvProcessor extends BaseProcessor {
         return text;
       }
     });
-    return writeFile(outPath, contents.join(EOL)).then(() => {
+    return this.writeFile(outPath, contents.join(EOL)).then(() => {
       console.info(`${outPath} created.`);
     });
   }

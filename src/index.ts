@@ -11,7 +11,8 @@ import DefaultPlugin from "./plugins/default-plugin";
 import processors from "./processors";
 import { parseMatch } from "./parseSetting";
 import { resolveOutputPath } from "./pathResolver";
-import { existsSync } from "node:fs";
+import { CacheResolver } from "./cache-resolver";
+import { writeFile } from "./writeFile";
 
 type ParseOptionResult = {
   exit?: boolean;
@@ -22,6 +23,7 @@ type ParseOptionResult = {
 export class Syncenv {
   private config: Promise<SyncenvConfig>;
   private configResolver: IConfigResolver;
+  private cacheResolver: CacheResolver;
   private force: boolean = false;
 
   constructor(
@@ -31,24 +33,27 @@ export class Syncenv {
       force?: boolean;
     },
     interfaces?: {
-      configParser: IConfigParser;
-      configResolver: IConfigResolver;
+      configParser?: IConfigParser;
+      configResolver?: IConfigResolver;
+      cacheResolver?: CacheResolver;
     }
   ) {
     const {
       configParser = new ConfigParser(),
       configResolver = new ConfigResolver(),
+      cacheResolver = new CacheResolver(),
     } = interfaces || {};
     this.config = Promise.resolve(
       params?.config || configParser.config(params?.configPath)
     );
     this.configResolver = configResolver;
+    this.cacheResolver = cacheResolver;
     this.force = params?.force || false;
   }
 
   private replacerInputs(
     replaces: Record<string, string | number | boolean> | undefined,
-    defaultReplacerKey: string = DefaultPlugin.pluginId
+    default_replacerKey: string = DefaultPlugin.pluginId
   ): Record<string, Record<string, string | number | boolean>> {
     const replacersMap: Record<
       string,
@@ -65,7 +70,7 @@ export class Syncenv {
         replacersMapValue[key] = requestId;
         replacersMap[replacerKey] = replacersMapValue;
       } else {
-        const replacerKey = defaultReplacerKey;
+        const replacerKey = default_replacerKey;
         const replacersMapValue = replacersMap[replacerKey] || {};
         replacersMapValue[key] = value;
         replacersMap[replacerKey] = replacersMapValue;
@@ -149,10 +154,10 @@ export class Syncenv {
     const finalConfig: ParseOptionResult = {};
     for (const index of range) {
       if (["-h", "--help"].includes(options[index])) {
-        console.log(
+        console.info(
           "syncenv: command line tools management environment values in files."
         );
-        console.log(
+        console.info(
           "  --config, -c <path>: arbitrary config path is not configured by cosmiconfig."
         );
         return {
@@ -184,17 +189,24 @@ export class Syncenv {
     const replacers = await this.configResolver.resolvePlugins(config);
     const setting = config.setting;
     const queues: Promise<any>[] = [];
+    if (config.cache) {
+      this.cacheResolver.setCacheDir(config.cache)
+    }
     for (const params of setting) {
       if (config.cache && !this.force) {
-        const outPath = resolveOutputPath(params);
-        if (existsSync(outPath)) {
-          console.info(`${outPath} already exists. skip.`);
+        const [outPath, contents] = await this.cacheResolver.restoreCache(
+          resolveOutputPath(params),
+          config
+        );
+        if (outPath && contents) {
+          writeFile(outPath, contents)
+          console.info(`${outPath} has used cache.`);
           continue;
         }
       }
       const replacerInputs = this.replacerInputs(
         params.replaces,
-        params.defaultReplacer
+        params.default_replacer
       );
       const placeholderMapping = await this.createPlaceholderMap(
         replacers,
@@ -202,10 +214,13 @@ export class Syncenv {
         params.pipes
       );
       const processorClass = processors[params.type];
-      const processor = new processorClass(placeholderMapping, params);
+      const processor = new processorClass(placeholderMapping, params, this.cacheResolver);
       queues.push(processor.process());
     }
     await Promise.all(queues);
+    if (config.cache) {
+      await this.cacheResolver.archiveCacheFile(config)
+    }
   }
 }
 

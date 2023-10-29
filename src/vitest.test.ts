@@ -1,18 +1,26 @@
-import { test, expect, mock } from "bun:test";
-import * as configuration from "../fixtures/syncenvrc.yaml";
+import { test, expect } from "vitest";
+import {load} from "js-yaml";
+import {readFileSync} from "fs";
+import {resolve} from "path";
 import { ConfigResolver, type IConfigResolver } from "./config-resolver";
-import { IConfigParser, SyncenvConfig } from "./config-parser";
+import { ConfigParser, IConfigParser, SyncenvConfig } from "./config-parser";
 import { PluginInterface } from "./plugins/plugin-interface";
 import GcpSecretPlugin, {
   IGcpSecretReplacerClient,
 } from "./plugins/gcp-secret-plugin";
+import { Syncenv } from "./index";
 import { google } from "@google-cloud/secret-manager/build/protos/protos";
 import { CallOptions, Callback } from "google-gax";
 import DefaultPlugin from "./plugins/default-plugin";
 
 class ConfigParserMock implements IConfigParser {
   async config() {
-    return configuration;
+    const configuration = load(readFileSync(
+      resolve(process.cwd(),'./fixtures/syncenvrc.cache.yaml')
+    ).toString()) as any
+    return new ConfigParser().parseConfig(
+      configuration
+    );
   }
 }
 
@@ -92,10 +100,16 @@ class ConfigResolverMock extends ConfigResolver {
 }
 
 test("file test", async () => {
-  const configParser = new ConfigParserMock();
-  const configResolver = new ConfigResolver();
-  const replacers = await configResolver.resolvePlugins(
-    await configParser.config()
-  );
-  expect(configuration).toBeTruthy();
+  const syncenv = new Syncenv(undefined, {
+    configParser: new ConfigParserMock(),
+    configResolver: new ConfigResolverMock(),
+  });
+  await syncenv.run();
+  expect(true).toBeTruthy();
+  const cacheTest = new Syncenv(undefined, {
+    configParser: new ConfigParserMock(),
+    configResolver: new ConfigResolverMock(),
+  });
+  await cacheTest.run();
+  expect(true).toBeTruthy();
 });
