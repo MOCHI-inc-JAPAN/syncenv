@@ -13,7 +13,7 @@ setting:
       PLUGIN_NPM_TEST: $PLUGIN_NPM_TEST
     replaces:
       DOUBLE_QUATE_TEST: 'double "quate test'
-      TO_BE_REPLACE: replaceId
+      TO_BE_REPLACE: changed
       PLUGIN_TEST: "__custom:test__"
       PLUGIN_NPM_TEST: "__npm:test__"
     pipes:

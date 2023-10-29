@@ -1,6 +1,6 @@
 import { resolve, join, dirname } from "node:path";
 import { stat } from "node:fs/promises";
-import { existsSync as fsExists } from "node:fs";
+import { existsSync as fsExists, statSync } from "node:fs";
 import { SyncenvConfigObject } from "./config-parser";
 
 type ConfigObject = SyncenvConfigObject<any>;
@@ -25,7 +25,7 @@ export const resolveAbsolutePath = (outputPath: string) => {
 };
 
 export async function isDirectory(path: string) {
-  const dirExists = await fsExists(path);
+  const dirExists = fsExists(path);
   if (!dirExists) {
     return false;
   }
@@ -34,10 +34,19 @@ export async function isDirectory(path: string) {
 }
 
 export async function isFile(path: string) {
-  const fileExists = await fsExists(path);
+  const fileExists = fsExists(path);
   if (!fileExists) {
     return false;
   }
   const stats = await stat(path);
+  return stats.isFile();
+}
+
+export function isFileSync(path: string) {
+  const fileExists = fsExists(path);
+  if (!fileExists) {
+    return false;
+  }
+  const stats = statSync(path);
   return stats.isFile();
 }
