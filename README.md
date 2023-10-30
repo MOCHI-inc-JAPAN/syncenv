@@ -61,14 +61,14 @@ setting:
     replaces:
       TO_BE_REPLACE: replaceId
       TO_BE_REPLACE_PROVIDER: __gcp:replaceId__
-    default_replacer?: default
+    default_replacer: default
   - type: template
     input_path: ./fixtures/.env.template
     output_path: ./artifacts/template-output.env
     replaces:
       TO_BE_REPLACE: replaceId
       TO_BE_REPLACE_PROVIDER: __gcp:replaceId__
-    default_replacer?: default
+    default_replacer: default
 ```
 
 will generate files the contents followed by in artifacts/ directory.
@@ -111,11 +111,11 @@ Locate config file in you project's root.
 
 Then, run
 
-`npx synenv`
+`npx syncenv`
 
 If you want to apply another config file, you can specify another config name with (-c, --config) option.
 
-`npx synenv -c .anotherconfig.yml`
+`npx syncenv -c .anotherconfig.yml`
 
 ### ConfigValue
 
@@ -171,7 +171,7 @@ pipes:
 
 #### Change Replacers by each placeholder value
 
-The default_replacer is used useally. However, You can change replacers by each placeholder values with special syntax `__(.*):(.*)__` is available. The first mached value is plugin name and the second is request parameter for replacer provided by the plugin. The syntax matched changes replacer to be used.
+The default_replacer is used usually. However, You can change replacers by each placeholder values with special syntax `__(.*):(.*)__` is available. The first mached value is plugin name and the second is request parameter for replacer provided by the plugin. The syntax matched changes replacer to be used.
 
 ### Plugins
 
@@ -182,7 +182,7 @@ The plugin class must be exported from `default` property, and has ether or both
 
 Example:
 
-Given if cosum-plugin.ts is followed by the code.
+Given if costum-plugin.ts is followed by the code.
 
 ```ts
 import { Plugin, SyncenvConfig } from "@tkow/syncenv";
@@ -232,7 +232,7 @@ setting:
     default_replacer: custom
 ```
 
-Syncenv imports plugins' paths and node_modules all and register the replacer named by pluginId and the pipes are available in all the config file. Specify default_replacer with your pluginId if you want to process replaces' values by your plugin `fetchValues` method. Then once you run `npx envsync`, you can see generated ./artifacts/.env file will be:
+Syncenv imports plugins' paths and node_modules all and register the replacer named by pluginId and the pipes are available in all the config file. Specify default_replacer with your pluginId if you want to process replaces' values by your plugin `fetchValues` method. Then once you run `npx syncenv`, you can see generated ./artifacts/.env file will be:
 
 ```env
 REPLACED=pre-student-1
@@ -259,7 +259,7 @@ See the detail in https://cloud.google.com/docs/authentication/getting-started.
 
 ## Cache Mode
 
-As default, synenv always fetch and generate files when output files exist. Sometimes, this may annoy you when using pricing sttorage. If you want to change this behavior, set `cache: true` option and synenv will use cache files to genrate them when it is available and doesn't run provider actions. Even if you set `cache: true`, you can ignore cache files with flag `-f or --force`.
+As default, syncenv always fetch and generate files when output files exist. Sometimes, this may annoy you when using pricing sttorage. If you want to change this behavior, set `cache: true` option and syncenv will use cache files to genrate them when it is available and doesn't run provider actions. Even if you set `cache: true`, you can ignore cache files with flag `-f or --force`.
 
 ```yaml
 cache: false
