@@ -274,4 +274,4 @@ You can change secret key file path, `cache_key_path: /path/to/yours` to share s
 
 ## Security Warning
 
-If you use .syncenv and others, be careful not to let malicious users modify syncenv config files or steal your secret keys. Especially, if you commit oss project and run syncenv in CI environment have permission to access your secret env storage, it may be possible to send your secrets to their servers revising syncenv config files or add malicious plugins to it. In addition, if you locate syncenv cache directory in your project with vcs, don't forget ignore it or locate your secret key file out of your version control.
+If you use syncenv with others, be careful not to let malicious users modify syncenv config files or steal your secret keys. Especially, if you commit oss project and run syncenv in CI environment have permission to access your secret env storage, it may be possible to send your secrets to their servers revising syncenv config files or add malicious plugins to it. In addition, if you locate syncenv cache directory in your project with vcs, don't forget ignore it or locate your secret key file out of your version control.
