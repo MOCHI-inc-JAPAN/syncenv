@@ -136,7 +136,7 @@ Values to be written in the output file, You can specify directly `__provider:(r
 #### replaces [ Object ] < optional >
 
 The key string replace same name variable syntax in content to the modifed value by replacer.fetchValues. The original value is used for replacer.fetchValues parameters,
-Given if, the variable syntax are ${NAME} or $NAME in the content. If the key is NAME and the modified value is PASSWORD, the variable syntaxes, ${NAME} or $NAME in content are replaced to PASSWORD.
+Given if, the variable syntax are `${NAME}` or `$NAME` in the content. If the key is NAME and the modified value is PASSWORD, the variable syntaxes, `${NAME}` or `$NAME` in content are replaced to PASSWORD.
 
 The content is various format by setting element value's type value.
 
@@ -268,7 +268,7 @@ cache: false
 
 Cache files will be stored in your $Home/.syncenv directory with created if it doesn't exist. If you want to change the path you can configure it with cache property like `cache: /path/to/yours`.
 
-Cache directory has two type files. They are cache-key.json and syncenv cache.data. The ${cacheId}-cache.data is encrypted your env data and cache-key.json is your encryption key. Thus, Cache directory shouldn't be shared publically, especially cache-key.json must be secret from malicious users, so you should set .gitignore your cache path if you include it in your project and should not commit them to your vcs.
+Cache directory has two type files. They are cache-key.json and syncenv cache.data. The `${cacheId}-cache.data` is encrypted your env data and cache-key.json is your encryption key. Thus, Cache directory shouldn't be shared publically, especially cache-key.json must be secret from malicious users, so you should set .gitignore your cache path if you include it in your project and should not commit them to your vcs.
 
 You can change secret key file path, `cache_key_path: /path/to/yours` to share same key, it's not needed in most case.
 
