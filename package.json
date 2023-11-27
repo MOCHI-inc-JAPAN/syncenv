@@ -62,7 +62,6 @@
     "@google-cloud/secret-manager": "^5.0.1",
     "concat-stream": "^2.0.0",
     "cosmiconfig": "^8.3.6",
-    "crypto": "^1.0.1",
     "tar": "^6.2.0",
     "tar-stream": "^3.1.6",
     "valibot": "^0.17.1"

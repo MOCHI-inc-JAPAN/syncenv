@@ -7,7 +7,7 @@ settings:
 dependencies:
   '@tkow/npm-plugin':
     specifier: file:custom-plugins/npm-plugin
-    version: file:custom-plugins/npm-plugin(@tkow/syncenv@1.2.0)
+    version: file:custom-plugins/npm-plugin(@tkow/syncenv@2.0.0)
   '@tkow/syncenv':
     specifier: file:..
     version: file:..
@@ -355,11 +355,6 @@ packages:
       js-yaml: 4.1.0
       parse-json: 5.2.0
       path-type: 4.0.0
-    dev: false
-
-  /crypto@1.0.1:
-    resolution: {integrity: sha512-VxBKmeNcqQdiUQUW2Tzq0t377b54N2bMtXO/qiLa+6eRRmmC4qT3D4OnTGoT/U6O9aklQ/jTwbOtRMTTY8G0Ig==}
-    deprecated: This package is no longer supported. It's now a built-in Node module. If you've depended on crypto, you should switch to the one that's built-in.
     dev: false
 
   /debug@4.3.4:
@@ -1073,7 +1068,6 @@ packages:
     dependencies:
       concat-stream: 2.0.0
       cosmiconfig: 8.3.6
-      crypto: 1.0.1
       tar: 6.2.0
       tar-stream: 3.1.6
       valibot: 0.17.1
@@ -1085,7 +1079,7 @@ packages:
       - typescript
     dev: false
 
-  file:custom-plugins/npm-plugin(@tkow/syncenv@1.2.0):
+  file:custom-plugins/npm-plugin(@tkow/syncenv@2.0.0):
     resolution: {directory: custom-plugins/npm-plugin, type: directory}
     id: file:custom-plugins/npm-plugin
     name: '@tkow/npm-plugin'
