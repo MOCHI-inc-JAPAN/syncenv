@@ -1,5 +1,11 @@
 # syncenv
 
+## 2.0.1
+
+### Patch Changes
+
+- 03b2dfc: remove crypto npm package
+
 ## 2.0.0
 
 ### Major Changes
