@@ -6,13 +6,13 @@ setting:
     env:
       BOOLEAN_TEST: true
       NUMBER_TEST: 1
-      DOUBLE_QUATE_TEST: ${DOUBLE_QUATE_TEST}
+      DOUBLE_QUOTE_TEST: ${DOUBLE_QUOTE_TEST}
       NOT_REPLACED: NOT_REPLACED
       REPLACED: ${TO_BE_REPLACE}
       PLUGIN_TEST: ${PLUGIN_TEST}
       PLUGIN_NPM_TEST: $PLUGIN_NPM_TEST
     replaces:
-      DOUBLE_QUATE_TEST: 'double "quate test'
+      DOUBLE_QUOTE_TEST: 'double "quote test'
       TO_BE_REPLACE: replaceId
       PLUGIN_TEST: "__custom:test__"
       PLUGIN_NPM_TEST: "__npm:test__"
@@ -22,12 +22,12 @@ setting:
   - type: ".env"
     output_dir: ./artifacts
     filename: .env.dev
-    quate: "'"
+    quote: "'"
     env:
       BOOLEAN_TEST: ${BOOLEAN_TEST}
       NUMBER_TEST: ${NUMBER_TEST}
       ENV_REPLACER_TEST: __default:foo__
-      QUATE_TEST: $QUATE_TEST
+      QUOTE_TEST: $QUOTE_TEST
       ESCAPE_TEST: $ESCAPE_TEST
       PIPE_TEST: $PIPE_TEST
       PIPE_REGEXP_TEST: $PIPE_REGEXP_TEST
@@ -38,7 +38,7 @@ setting:
     replaces:
       BOOLEAN_TEST: false
       NUMBER_TEST: 0
-      QUATE_TEST: "single 'quate test"
+      QUOTE_TEST: "single 'quote test"
       ESCAPE_TEST: "\n\t\r'\"@$#-_=*&^\\%~`"
       PIPE_TEST: "PIPE_FAILED"
       PIPE_REGEXP_TEST: "PIPE_FAILED"

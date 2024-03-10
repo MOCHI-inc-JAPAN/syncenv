@@ -149,7 +149,7 @@ The content can include multiple replace key and be replaced all matched variabl
 #### pipes
 
 You can transform replaces' results using pipes. Pipes can be extended by plugin implements loadPipes methods.
-Default plugin includes two type pipes, [trim, replace]. Pipes can be specified three forms, string, string[], `pipe1 | pipe2 | pipes...` as string. Pipes can be also specified with args if the pipe accepts them. Pipes' args can omit quate `'|"` if you don't want to tell them they're explicit string arguments.
+Default plugin includes two type pipes, [trim, replace]. Pipes can be specified three forms, string, string[], `pipe1 | pipe2 | pipes...` as string. Pipes can be also specified with args if the pipe accepts them. Pipes' args can omit quote `'|"` if you don't want to tell them they're explicit string arguments.
 
 Usage:
 

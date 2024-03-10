@@ -45,7 +45,7 @@ const SyncenvConfigObjectSchema = union([
     env: AvailableEnvValueSchema,
     replaces: optional(ReplacesSchema),
     pipes: optional(PipeSchema),
-    quate: coerce(string(), (val) => (val as string) ?? '"'),
+    quote: coerce(string(), (val) => (val as string) ?? '"'),
     default_replacer: optional(string()),
   }),
   object({
@@ -108,7 +108,7 @@ type EnvObject<Replacer> = {
   output_dir: string;
   filename?: string;
   env: EnvValue;
-  quate: string;
+  quote: string;
   replaces?: ReplacerValue;
   pipes?: PipeOptions;
   default_replacer?: Replacer;

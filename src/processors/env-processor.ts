@@ -2,7 +2,6 @@ import { EOL } from "node:os";
 import { CacheResolver } from "../cache-resolver";
 import { EnvType, SyncenvConfigObject } from "../config-parser";
 import { resolveOutputPath } from "../pathResolver";
-import { writeFile } from "../writeFile";
 import { BaseProcessor } from "./base-processor";
 
 export class EnvProcessor extends BaseProcessor {
@@ -36,7 +35,7 @@ export class EnvProcessor extends BaseProcessor {
     });
   }
 
-  private needQuatingChars = [
+  private needQuotingChars = [
     "=",
     "#",
     '"',
@@ -72,21 +71,21 @@ export class EnvProcessor extends BaseProcessor {
       (current, matcher) => current.replaceAll(matcher[0], matcher[1]),
       val
     );
-    if (value.includes('"') && this.config.quate === '"') {
+    if (value.includes('"') && this.config.quote === '"') {
       return value.replace(/"/g, '\\"');
     }
-    if (value.includes("'") && this.config.quate === "'") {
+    if (value.includes("'") && this.config.quote === "'") {
       return value.replace(/'/g, "\\'");
     }
     return value;
   }
 
   private quoteValue(value: string): string {
-    const needQuate = this.needQuatingChars.some((char) =>
+    const needQuote = this.needQuotingChars.some((char) =>
       value.includes(char)
     );
-    return needQuate
-      ? `${this.config.quate}${value}${this.config.quate}`
+    return needQuote
+      ? `${this.config.quote}${value}${this.config.quote}`
       : value;
   }
 }
