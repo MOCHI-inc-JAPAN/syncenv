@@ -1,5 +1,11 @@
 # syncenv
 
+## 2.0.2
+
+### Patch Changes
+
+- ab0cb4c: fix typo
+
 ## 2.0.1
 
 ### Patch Changes
