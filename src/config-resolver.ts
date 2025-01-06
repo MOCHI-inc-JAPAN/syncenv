@@ -30,11 +30,11 @@ export class ConfigResolver {
     }[str];
   }
 
-  private async loadPlugin(str: string) {
+  private async loadPlugin(str: string, work_dir: string) {
     if (BUILTIN_REPLACERS.includes(str as BuitinReplacers)) {
       return await this.builtinPlugins(str as BuitinReplacers)();
     }
-    const importPath = str.startsWith(".") ? resolve(process.cwd(), str) : str;
+    const importPath = str.startsWith(".") ? resolve(work_dir, str) : str;
     return await import(importPath);
   }
 
@@ -48,7 +48,7 @@ export class ConfigResolver {
     ];
     for (const plugin of plugins) {
       const LoadedPlugin: PluginInterfaceConstructor = (
-        await this.loadPlugin(plugin)
+        await this.loadPlugin(plugin, arg.work_dir)
       ).default;
       this.plugins[LoadedPlugin.pluginId] = new LoadedPlugin();
     }

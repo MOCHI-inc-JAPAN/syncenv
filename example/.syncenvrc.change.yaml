@@ -1,5 +1,6 @@
 plugins: ["./custom-gcp", "./custom-plugins/custom-plugin", "@tkow/npm-plugin"]
 cache: ./.syncenv
+target: changed
 setting:
   - type: ".envrc"
     output_dir: ./artifacts

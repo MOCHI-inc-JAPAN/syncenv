@@ -29,13 +29,13 @@ type SecrectKey = {
   iv: Buffer;
 };
 
-type CacheConfig = { cacheDir: string; cacheId: string };
+type CacheConfig = { cacheDir: string; cacheId: string, baseDir: string };
 
 export class CacheResolver {
   private cacheGzipPack: Pack;
   private secretKey: SecrectKey | undefined;
   cacheFiles: Record<string, Buffer> | undefined;
-  config: CacheConfig = { cacheDir: "", cacheId: "" };
+  config: CacheConfig = { cacheDir: "", cacheId: "", baseDir: "" };
 
   constructor() {
     this.cacheGzipPack = pack();
@@ -45,6 +45,7 @@ export class CacheResolver {
     this.config = {
       ...this.config,
       ...cacheConfig,
+      baseDir: cacheConfig.baseDir || this.config.baseDir,
     };
   }
 
@@ -201,7 +202,7 @@ export class CacheResolver {
 
   private fileKey(outputPath: string) {
     return outputPath
-      .replace(new RegExp(process.cwd() + "/?"), "")
+      .replace(new RegExp(this.config.baseDir + "/?"), "")
       .replaceAll("/", "-")
       .replaceAll(".", "-dot-");
   }
@@ -211,7 +212,7 @@ export class CacheResolver {
     options?: { cache_key_path?: string }
   ) {
     return options?.cache_key_path
-      ? resolveAbsolutePath(options.cache_key_path)
+      ? resolveAbsolutePath(options.cache_key_path, this.config.baseDir)
       : resolvePath(cacheDir, CACHE_KEY_FILE_NAME);
   }
 

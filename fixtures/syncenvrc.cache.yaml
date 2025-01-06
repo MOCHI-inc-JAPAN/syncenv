@@ -1,4 +1,6 @@
 plugins: ["gcp"]
+target: cache-test
+work_dir: '../'
 cache: ./artifacts/.syncenv
 cache_key_path: ./artifacts/.syncenv/custom-key
 setting:
