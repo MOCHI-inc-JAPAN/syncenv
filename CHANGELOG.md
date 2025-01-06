@@ -1,5 +1,11 @@
 # syncenv
 
+## 2.1.0
+
+### Minor Changes
+
+- 6599633: enable to check last applied config
+
 ## 2.0.2
 
 ### Patch Changes
