@@ -16,7 +16,7 @@ export class FileProcessor extends BaseProcessor {
   }
 
   async process(): Promise<void> {
-    const outPath = resolveOutputPath(this.config);
+    const outPath = resolveOutputPath(this.config, this.config.work_dir);
     if (this.config.placeholder) {
       const contents = this.replaceValue(
         this.config.placeholder,

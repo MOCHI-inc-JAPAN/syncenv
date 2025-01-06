@@ -17,7 +17,7 @@ export class EnvProcessor extends BaseProcessor {
   }
 
   async process(): Promise<void> {
-    const outPath = resolveOutputPath(this.config);
+    const outPath = resolveOutputPath(this.config, this.config.work_dir);
     const contents = Object.entries(this.config.env).map(([key, value]) => {
       const finalValue =
         typeof value === "string"

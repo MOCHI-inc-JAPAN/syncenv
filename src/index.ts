@@ -10,14 +10,17 @@ import { BaseProcessor } from "./processors/base-processor";
 import DefaultPlugin from "./plugins/default-plugin";
 import processors from "./processors";
 import { parseMatch } from "./parseSetting";
-import { resolveOutputPath } from "./pathResolver";
+import { isFile, resolveAbsolutePath, resolveOutputPath } from "./pathResolver";
 import { CacheResolver } from "./cache-resolver";
 import { writeFile } from "./writeFile";
+import { readFileSync } from "node:fs";
+import { EOL } from "node:os";
 
 type ParseOptionResult = {
   exit?: boolean;
   configPath?: string;
   force?: boolean;
+  info?: 'target-only' | 'all';
 };
 
 export class Syncenv {
@@ -160,6 +163,12 @@ export class Syncenv {
         console.info(
           "  --config, -c <path>: arbitrary config path is not configured by cosmiconfig."
         );
+        console.info(
+          "  --info, -i: show previously applied internal configuration."
+        );
+        console.info(
+          "  --target, -t: last applied target."
+        );
         return {
           exit: true,
         };
@@ -179,9 +188,58 @@ export class Syncenv {
       if (["-f", "--force"].includes(options[index])) {
         finalConfig["force"] = true;
       }
+
+      if (["-i", "--info"].includes(options[index])) {
+        finalConfig["info"] = 'all';
+      }
+
+      if (["-t", "--target-only"].includes(options[index])) {
+        finalConfig["info"] = 'target-only';
+      }
     }
 
     return finalConfig;
+  }
+
+  private async createApplyCache(config: SyncenvConfig) {
+    if(config.work_dir) {
+      const internalConfigPath = `${config.work_dir}/.syncenv/.config`
+      await writeFile(
+        resolveAbsolutePath(
+          internalConfigPath,
+          config.work_dir
+        ),
+        [
+          `target=${config.target || config.work_file}`,
+          `configFile=${config.work_file}`,
+          config.cache && `cache_dir=${config.cache}`,
+        ].filter(Boolean).join(EOL)
+      )
+    }
+  }
+
+  async infoApplyCache(fmtOption: 'all' | 'target-only' = 'all') {
+    const config = await this.config;
+    if(config.work_dir) {
+      const internalConfigPath = `${config.work_dir}/.syncenv/.config`
+      if(await isFile(internalConfigPath)) {
+        const infoFile = readFileSync(
+          resolveAbsolutePath(
+            internalConfigPath,
+            config.work_dir
+          )
+        )
+
+        if(fmtOption === 'all') {
+          console.log(infoFile.toString())
+        }
+
+        if(fmtOption === 'target-only') {
+          const target = infoFile.toString().split(EOL).find((v) => v.startsWith('target='))
+          console.log(target?.split('=')[1])
+        }
+      }
+    }
   }
 
   async run() {
@@ -193,12 +251,13 @@ export class Syncenv {
       this.cacheResolver.setCacheConfig({
         cacheDir: config.cache,
         cacheId: config.cache_id,
+        baseDir: config.work_dir
       });
     }
     for (const params of setting) {
       if (config.cache && !this.force) {
         const [outPath, contents] = await this.cacheResolver.restoreCache(
-          resolveOutputPath(params),
+          resolveOutputPath(params, config.work_dir),
           config
         );
         if (outPath && contents) {
@@ -228,13 +287,19 @@ export class Syncenv {
     if (config.cache) {
       await this.cacheResolver.archiveCacheFile(config);
     }
+
+    await this.createApplyCache(config)
   }
 }
 
 function run(...options: string[]) {
-  const { configPath, exit, force } = Syncenv.parseOptions(...options);
+  const { configPath, exit, force, info } = Syncenv.parseOptions(...options);
   if (exit) return;
-  return new Syncenv({ configPath, force }).run();
+  const syncenv = new Syncenv({ configPath, force })
+  if(info) {
+    return syncenv.infoApplyCache(info);
+  }
+  return syncenv.run();
 }
 
 export {
