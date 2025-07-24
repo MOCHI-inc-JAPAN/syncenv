@@ -15,6 +15,7 @@ import { CacheResolver } from "./cache-resolver";
 import { writeFile } from "./writeFile";
 import { readFileSync } from "node:fs";
 import { EOL } from "node:os";
+import path from "node:path";
 
 type ParseOptionResult = {
   exit?: boolean;
@@ -167,7 +168,7 @@ export class Syncenv {
           "  --info, -i: show previously applied internal configuration."
         );
         console.info(
-          "  --target, -t: last applied target."
+          "  --target-only, -t: last applied target."
         );
         return {
           exit: true,
@@ -191,14 +192,29 @@ export class Syncenv {
 
       if (["-i", "--info"].includes(options[index])) {
         finalConfig["info"] = 'all';
+        if (!finalConfig["configPath"]) {
+          finalConfig["configPath"] = Syncenv.getCurrentEnvConfigPath();
+        }
       }
 
       if (["-t", "--target-only"].includes(options[index])) {
         finalConfig["info"] = 'target-only';
+        if (!finalConfig["configPath"]) {
+          finalConfig["configPath"] = Syncenv.getCurrentEnvConfigPath();
+        }
       }
     }
 
     return finalConfig;
+  }
+
+  static getCurrentEnvConfigPath(workDir?: string): string {
+    const fileContent = readFileSync(path.join(workDir || process.cwd(),'.syncenv','.config'))
+    const configFile = fileContent.toString().split(EOL).find((v) => v.startsWith('config_file='))
+    if(!configFile) {
+       throw new Error('No config file found in the current environment.')
+    }
+    return path.resolve(workDir || process.cwd(), configFile.split('=')[1])
   }
 
   private async createApplyCache(config: SyncenvConfig) {
@@ -211,7 +227,7 @@ export class Syncenv {
         ),
         [
           `target=${config.target || config.work_file}`,
-          `configFile=${config.work_file}`,
+          `config_file=${config.work_file}`,
           config.cache && `cache_dir=${config.cache}`,
         ].filter(Boolean).join(EOL)
       )
