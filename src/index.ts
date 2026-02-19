@@ -272,13 +272,16 @@ export class Syncenv {
     }
     for (const params of setting) {
       if (config.cache && !this.force) {
-        const [outPath, contents] = await this.cacheResolver.restoreCache(
-          resolveOutputPath(params, config.work_dir),
-          config
+        const cacheResults = await Promise.all(
+          resolveOutputPath(params, config.work_dir).map((outPath) =>
+            this.cacheResolver.restoreCache(outPath, config)
+          )
         );
-        if (outPath && contents) {
-          writeFile(outPath, contents);
-          console.info(`${outPath} has used cache.`);
+        if (cacheResults.every(([outPath, contents]) => outPath && contents)) {
+          cacheResults.forEach(([outPath, contents]) => {
+            writeFile(outPath!, contents!);
+            console.info(`${outPath} has used cache.`);
+          });
           continue;
         }
       }
