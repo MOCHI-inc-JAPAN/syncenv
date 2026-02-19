@@ -31,11 +31,6 @@ jobs:
         run: |
           git config --local user.email ${{ secrets.BOT_MAIL }}
           git config --local user.name ${{ secrets.BOT_NAME }}
-      - name: Setup npm config
-        run: |
-          npm config set '//registry.npmjs.org/:_authToken' '${NPM_TOKEN}'
-        shell: bash
-
       - name: create and publish versions
         uses: changesets/action@v1
         with:
