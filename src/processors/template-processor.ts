@@ -24,12 +24,16 @@ export class TemplateProcessor extends BaseProcessor {
     const inputPath = this.config.input_path.startsWith("/")
       ? this.config.input_path
       : resolve(this.config.work_dir, this.config.input_path);
-    const outPath = resolveOutputPath(this.config, this.config.work_dir);
+    const outPaths = resolveOutputPath(this.config, this.config.work_dir);
     const file = await readFile(inputPath);
     console.info(`${inputPath} read.`);
     const contents = this.replaceValue(file.toString(), this.placeholderMap);
-    return this.writeFile(outPath, contents).then(() => {
-      console.info(`${outPath} created.`);
-    });
+    await Promise.all(
+      outPaths.map((outPath) =>
+        this.writeFile(outPath, contents).then(() => {
+          console.info(`${outPath} created.`);
+        })
+      )
+    );
   }
 }

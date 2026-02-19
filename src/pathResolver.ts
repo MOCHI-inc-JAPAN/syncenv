@@ -7,15 +7,16 @@ type ConfigObject = SyncenvConfigObject<any>;
 type OutputConfig = Extract<ConfigObject, { output_path: any }>;
 type DirFileConfig = Exclude<ConfigObject, { output_path: any }>;
 
-export const resolveOutputPath = (config: ConfigObject, baseDir: string) => {
-  const outputPath =
-    (config as OutputConfig).output_path ||
-    join(
-      (config as DirFileConfig).output_dir!,
-      (config as DirFileConfig).filename || (config as DirFileConfig).type!
-    );
-
-  return resolveAbsolutePath(outputPath, baseDir);
+export const resolveOutputPath = (config: ConfigObject, baseDir: string): string[] => {
+  const outputPaths = (config as OutputConfig).output_path;
+  if (outputPaths) {
+    return outputPaths.map((p) => resolveAbsolutePath(p, baseDir));
+  }
+  const dirConfig = config as DirFileConfig;
+  const filename = dirConfig.filename || dirConfig.type!;
+  return dirConfig.output_dir.map((dir) =>
+    resolveAbsolutePath(join(dir, filename), baseDir)
+  );
 };
 
 export const resolveAbsolutePath = (outputPath: string, baseDir: string) => {

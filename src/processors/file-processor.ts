@@ -16,20 +16,19 @@ export class FileProcessor extends BaseProcessor {
   }
 
   async process(): Promise<void> {
-    const outPath = resolveOutputPath(this.config, this.config.work_dir);
-    if (this.config.placeholder) {
-      const contents = this.replaceValue(
-        this.config.placeholder,
-        this.placeholderMap as Record<string, string | number | boolean>
-      );
-      return this.writeFile(outPath, contents).then(() => {
-        console.info(`${outPath} created.`);
-      });
-    } else {
-      const contents = this.placeholderMap["@@content"] as Buffer;
-      return this.writeFile(outPath, contents).then(() => {
-        console.info(`${outPath} created.`);
-      });
-    }
+    const outPaths = resolveOutputPath(this.config, this.config.work_dir);
+    const contents = this.config.placeholder
+      ? this.replaceValue(
+          this.config.placeholder,
+          this.placeholderMap as Record<string, string | number | boolean>
+        )
+      : (this.placeholderMap["@@content"] as Buffer);
+    await Promise.all(
+      outPaths.map((outPath) =>
+        this.writeFile(outPath, contents).then(() => {
+          console.info(`${outPath} created.`);
+        })
+      )
+    );
   }
 }

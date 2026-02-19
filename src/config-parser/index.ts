@@ -37,10 +37,20 @@ const ReplacesSchema = record(union([string(), boolean(), number()]));
 
 const PipeSchema = record(union([string(), array(string())]));
 
+const OutputDirSchema = transform(
+  union([string(), array(string())]),
+  (val) => (Array.isArray(val) ? val : [val])
+);
+
+const OutputPathSchema = transform(
+  union([string(), array(string())]),
+  (val) => (Array.isArray(val) ? val : [val])
+);
+
 const SyncenvConfigObjectSchema = union([
   object({
     type: union([literal(".env"), literal(".envrc")]),
-    output_dir: string(),
+    output_dir: OutputDirSchema,
     filename: optional(string()),
     env: AvailableEnvValueSchema,
     replaces: optional(ReplacesSchema),
@@ -50,7 +60,7 @@ const SyncenvConfigObjectSchema = union([
   }),
   object({
     type: literal("file"),
-    output_path: string(),
+    output_path: OutputPathSchema,
     placeholder: optional(string()),
     replaces: transform(optional(union([ReplacesSchema, string()])), (val) =>
       typeof val === "string" ? { "@@content": val } : val
@@ -67,7 +77,7 @@ const SyncenvConfigObjectSchema = union([
   object({
     type: literal("template"),
     input_path: string(),
-    output_path: string(),
+    output_path: OutputPathSchema,
     replaces: optional(ReplacesSchema),
     pipes: optional(PipeSchema),
     default_replacer: optional(string()),
@@ -107,7 +117,7 @@ export type PipeOptions = Output<typeof PipeSchema>;
 
 type EnvObject<Replacer> = {
   type: EnvType;
-  output_dir: string;
+  output_dir: string[];
   filename?: string;
   env: EnvValue;
   quote: string;
@@ -119,7 +129,7 @@ type EnvObject<Replacer> = {
 
 type FileObject<Replacer> = {
   type: FileType;
-  output_path: string;
+  output_path: string[];
   placeholder?: string;
   replaces?: ReplacerValue;
   pipes?: PipeOptions;
@@ -130,7 +140,7 @@ type FileObject<Replacer> = {
 type TemplateObject<Replacer> = {
   type: TemplateType;
   input_path: string;
-  output_path: string;
+  output_path: string[];
   replaces?: ReplacerValue;
   pipes?: PipeOptions;
   default_replacer?: Replacer;
