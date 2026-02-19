@@ -1,5 +1,11 @@
 # syncenv
 
+## 2.1.2
+
+### Patch Changes
+
+- bb84e92: feat: array arguments
+
 ## 2.1.0
 
 ### Minor Changes
